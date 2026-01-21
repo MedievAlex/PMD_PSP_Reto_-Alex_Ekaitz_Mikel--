@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
-    <mapping directory="$PROJECT_DIR$/../../../.." vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../../ADT/RepasoExamenHibernate" vcs="Git" />
+    <mapping directory="$USER_HOME$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../RetoAdtiDin" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../RetoAdtiMongo" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../RetoClienteServidor" vcs="Git" />
   </component>
 </project>
