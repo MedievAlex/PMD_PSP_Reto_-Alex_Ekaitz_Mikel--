@@ -1,18 +1,18 @@
 package ema.maven.model;
 
-public class Usuarios {
+public class Usuario {
 	private int id;
 	private String nombre;
 	private String contraseña;
 	
-	public Usuarios() {}
+	public Usuario() {}
 	
-	public Usuarios(int id, String nombre, String contraseña) {
+	public Usuario(int id, String nombre, String contraseña) {
 		this.id = id;
 		this.nombre = nombre;
 		this.contraseña = contraseña;
 	}
-	public Usuarios( String nombre, String contraseña) {
+	public Usuario(String nombre, String contraseña) {
 		this.nombre = nombre;
 		this.contraseña = contraseña;
 	}

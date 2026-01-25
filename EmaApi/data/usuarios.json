@@ -1,0 +1,21 @@
+[ {
+  "id" : 1,
+  "nombre" : "user1",
+  "contraseña" : "1234"
+}, {
+  "id" : 2,
+  "nombre" : "user2",
+  "contraseña" : "1234"
+}, {
+  "id" : 3,
+  "nombre" : "user3",
+  "contraseña" : "1234"
+}, {
+  "id" : 4,
+  "nombre" : "user4",
+  "contraseña" : "1234"
+}, {
+  "id" : 5,
+  "nombre" : "user5",
+  "contraseña" : "1234"
+} ]
