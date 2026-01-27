@@ -2,9 +2,15 @@ package ema.maven.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import org.springframework.stereotype.Service;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,12 +33,24 @@ public class Servicio {
 	private static final String DATA_DIR = "data";
 	private static final String USERS_FILE = DATA_DIR + "/usuarios.json";
 	private static final String APKS_FILE = DATA_DIR + "/apks.json";
+	private static final String FILES_DIR = "files";
+	private static final String APKS_DIR = FILES_DIR + "/apks";
+	private static final String IMAGES_DIR = FILES_DIR + "/images";
 
 	@PostConstruct
 	public void init() throws StreamReadException, DatabindException, IOException {
 		cargarUsuarios();
-		cargarAPKs();
 		calcularUltimoId();
+		generarAPKs();
+	}
+
+	private void guardarJson(String rutaArchivo, Object datos) {
+		try {
+			File archivo = new File(rutaArchivo);
+			mapeador.writerWithDefaultPrettyPrinter().writeValue(archivo, datos);
+		} catch (IOException e) {
+			System.err.println("Error guardando " + rutaArchivo + ": " + e.getMessage());
+		}
 	}
 
 	// ========== MÉTODOS PARA USUARIOS ==========
@@ -61,12 +79,7 @@ public class Servicio {
 	}
 
 	private void guardarUsuarios() {
-		try {
-			File file = new File(USERS_FILE);
-			mapeador.writerWithDefaultPrettyPrinter().writeValue(file, usuarios);
-		} catch (IOException e) {
-			System.err.println("Error guardando usuarios: " + e.getMessage());
-		}
+		guardarJson(USERS_FILE, usuarios);
 	}
 
 	private void calcularUltimoId() {
@@ -139,30 +152,73 @@ public class Servicio {
 	}
 
 	// ========== MÉTODOS PARA APKS ==========
-	private void cargarAPKs() {
+	private String obtenerIconoBase64(String nombre) {
 		try {
-			File carpetaData = new File(DATA_DIR);
-			if (!carpetaData.exists()) {
-				carpetaData.mkdirs();
+			File carpetaIconos = new File(IMAGES_DIR);
+			File[] iconos = carpetaIconos.listFiles();
+
+			if (iconos == null) {
+				return "";
 			}
 
-			File archivoData = new File(APKS_FILE);
+			for (File icono : iconos) {
+				String nombreIcono = icono.getName().toLowerCase();
 
-			if (archivoData.exists()) {
-				apks = mapeador.readValue(archivoData, new TypeReference<ArrayList<APK>>() {
-				});
-			} else {
-				apks = new ArrayList<>();
-				mapeador.writerWithDefaultPrettyPrinter().writeValue(archivoData, apks);
+				if (nombreIcono.startsWith(nombre.toLowerCase())) {
+					byte[] bytes = Files.readAllBytes(icono.toPath());
+
+					return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+				}
 			}
-
 		} catch (Exception e) {
-			System.err.println("Error cargando APKs: " + e.getMessage());
-			apks = new ArrayList<>();
+			System.err.println("Error obteniendo icono para " + nombre + ": " + e.getMessage());
 		}
+
+		return "";
+	}
+
+	private void generarAPKs() {
+		apks.clear();
+		
+		new File(APKS_DIR).mkdirs(); // Crear carpetas si no existen
+	    new File(IMAGES_DIR).mkdirs();
+
+		File carpetaApks = new File(APKS_DIR);
+		File[] archivos = carpetaApks.listFiles();
+
+		if (archivos == null)
+			return;
+
+		for (File a : archivos) {
+			if (a.isFile() && a.getName().toLowerCase().endsWith(".apk")) {
+				String nombre = a.getName().replace(".apk", "");
+
+				String icono = obtenerIconoBase64(nombre);
+
+				APK apk = new APK();
+				apk.setTitulo(nombre);
+				apk.setDescripcion("Aplicación Android: " + apk.getTitulo());
+				apk.setImage(icono);
+
+				apks.add(apk);
+			}
+		}
+
+		guardarJson(APKS_FILE, apks);
 	}
 
 	public ArrayList<APK> listarAPKs() {
 		return new ArrayList<>(apks);
+	}
+
+	public Resource descargarAPK(String nombreApk) throws IOException {
+	    Path apkPath = Paths.get(APKS_DIR + "/" + nombreApk);
+	    Resource resource = new UrlResource(apkPath.toUri());
+	    
+	    if (!resource.exists()) {
+	    	return null;
+	    }
+	    
+	    return resource;
 	}
 }

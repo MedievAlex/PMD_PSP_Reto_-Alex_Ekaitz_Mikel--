@@ -4,10 +4,12 @@ import java.util.ArrayList;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.io.Resource;
 
 import ema.maven.model.APK;
 import ema.maven.model.Usuario;
@@ -68,13 +70,25 @@ public class ControladorServicio {
 	public ResponseEntity<ArrayList<APK>> listApks() {
 		ArrayList<APK> apks = servicio.listarAPKs();
 		
-		if (apks == null) {
-			return ResponseEntity.internalServerError().build();
-		}
-		else if (apks.isEmpty()) {
+		if (apks.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		} else {
 			return ResponseEntity.status(200).body(apks);
 		}
+	}
+	
+	@GetMapping("/download/{apk}")
+	public ResponseEntity<Resource> descargar(@PathVariable String apk) {
+	    try {
+	    	Resource resource = servicio.descargarAPK(apk);
+	        
+	        if (resource == null || !resource.exists()) {
+	        	return ResponseEntity.notFound().build();
+	        }
+	        
+	        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + apk + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
+	    } catch (Exception e) {
+	        return ResponseEntity.internalServerError().build();
+	    }
 	}
 }

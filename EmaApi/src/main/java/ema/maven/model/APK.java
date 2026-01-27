@@ -1,23 +1,15 @@
 package ema.maven.model;
 
 public class APK {
-	private String image;
 	private String titulo;
 	private String descripcion;
-	private String apk;
+	private String image;
 	
-	public APK(String image, String titulo, String descripcion, String apk) {
-		this.image = image;
+	public APK() {}
+	
+	public APK(String titulo, String descripcion, String image, String apk) {
 		this.titulo = titulo;
 		this.descripcion = descripcion;
-		this.apk = apk;
-	}
-
-	public String getImage() {
-		return image;
-	}
-
-	public void setImage(String image) {
 		this.image = image;
 	}
 
@@ -36,18 +28,18 @@ public class APK {
 	public void setDescripcion(String descripcion) {
 		this.descripcion = descripcion;
 	}
-
-	public String getApk() {
-		return apk;
+	
+	public String getImage() {
+		return image;
 	}
 
-	public void setApk(String apk) {
-		this.apk = apk;
+	public void setImage(String image) {
+		this.image = image;
 	}
 
 	@Override
 	public String toString() {
-		return "APK [image=" + image + ", titulo=" + titulo + ", descripcion=" + descripcion + ", apk=" + apk + "]";
+		return "APK [titulo=" + titulo + ", descripcion=" + descripcion + "image=" + image + "]";
 	}
 	
 }
