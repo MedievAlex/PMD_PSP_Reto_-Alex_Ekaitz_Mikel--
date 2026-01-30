@@ -1,12 +1,15 @@
 package ema.maven.service;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -237,6 +240,10 @@ public class Servicio {
 	    if (getAPK(apk.getTitulo()) != null) {
 	        return null;
 	    }
+	    
+	    if (apk.getAutor() == null || apk.getAutor().trim().isEmpty()) {
+	        apk.setAutor("Desconocido");
+	    }
 
 	    if (apk.getDescripcion() == null || apk.getDescripcion().trim().isEmpty()) {
 	        apk.setDescripcion("Aplicación Android: " + apk.getTitulo());
@@ -316,14 +323,58 @@ public class Servicio {
 	public Resource downloadAPK(String titulo) {
 	    try {
 	        Path path = Paths.get(APKS_DIR + "/" + titulo);
-	        Resource resource = new UrlResource(path.toUri());
-
-	        if (!resource.exists()) {
+	        
+	        if (!Files.exists(path) || !Files.isRegularFile(path)) {
 	            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 	        }
+	        
+	        Resource resource = new UrlResource(path.toUri());
 
 	        return resource;
-	    } catch (ResponseStatusException e) {  // Relanzar 404 para que no siempre devuelva un 500
+	    } catch (ResponseStatusException e) {  // Relanzar para que no siempre devuelva un 500
+	        throw e;
+	    } catch (Exception e) {
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	// Comprobar hash APK
+	public String getHash(String titulo, String algoritmo) {
+		List<String> algoritmos = List.of("MD5", "SHA-1", "SHA-256");
+		
+		try {
+			Path path = Paths.get(APKS_DIR + "/" + titulo);
+
+	        if (!Files.exists(path) || !Files.isRegularFile(path)) {
+	            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+	        }
+	        
+	        if (algoritmo == null) {
+	        	algoritmo = "SHA-256"; // Algoritmo por defecto
+	        } else if (!algoritmos.contains(algoritmo)) {
+	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+	        }
+	        
+	        MessageDigest digest = MessageDigest.getInstance(algoritmo); // Elegir algoritmo
+	        
+	        try (FileInputStream fis = new FileInputStream(path.toFile())) { // Obtener array de bytes del archivo
+	            byte[] buffer = new byte[1024];
+	            int bytesRead;
+	            while ((bytesRead = fis.read(buffer)) != -1) {
+	                digest.update(buffer, 0, bytesRead);
+	            }
+	        }
+		    
+	        byte[] hashBytes = digest.digest();
+	        
+	        StringBuilder hexString = new StringBuilder();
+	        
+	        for (byte b : hashBytes) {
+	            hexString.append(String.format("%02X", b));
+	        }
+
+	        return hexString.toString();
+		} catch (ResponseStatusException e) {  // Relanzar para que no siempre devuelva un 500
 	        throw e;
 	    } catch (Exception e) {
 	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);

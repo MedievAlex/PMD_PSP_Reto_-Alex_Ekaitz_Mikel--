@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.core.io.Resource;
@@ -160,9 +161,10 @@ public class ControladorServicio {
 		}
 		
 		try {
-	    	Resource resource = servicio.downloadAPK(titulo);
+			String apk = titulo + ".apk";
+	    	Resource resource = servicio.downloadAPK(apk);
 	        
-	        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + titulo + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
+	        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + apk + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
 		} catch (ResponseStatusException e) {
 			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
 				return ResponseEntity.notFound().build();
@@ -173,11 +175,23 @@ public class ControladorServicio {
 	}
 	
 	@GetMapping("/hash/{titulo}")
-	public ResponseEntity<String> getHash(@PathVariable String titulo) {
+	public ResponseEntity<String> getHash(@PathVariable String titulo, @RequestParam(required = false) String algoritmo) {
 		if (titulo == null || titulo.trim().isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
 		
-		return ResponseEntity.ok().body("");
+		try {
+			String apk = titulo + ".apk";
+			String hash = servicio.getHash(apk, algoritmo);
+			return ResponseEntity.ok().body(hash);
+		} catch (ResponseStatusException e) {
+			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+				return ResponseEntity.notFound().build();
+			} else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+				return ResponseEntity.badRequest().body("Los algoritmos válidos son: MD5, SHA-1 y SHA-256");
+			} else {
+				return ResponseEntity.internalServerError().build();
+			}
+		}
 	}
 }
