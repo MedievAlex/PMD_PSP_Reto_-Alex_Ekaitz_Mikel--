@@ -2,6 +2,7 @@ package ema.maven.controller;
 
 import java.util.ArrayList;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.core.io.Resource;
 
 import ema.maven.model.APK;
@@ -28,16 +30,28 @@ public class ControladorServicio {
 	
 	@PostMapping("/login")
 	public ResponseEntity<String> login(@RequestBody Usuario user) {
-	    String nombre = servicio.login(user);
+		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
+			return ResponseEntity.badRequest().build();
+		}
+		
+	    Usuario u = servicio.login(user);
 	    
-	    return ResponseEntity.ok(nombre);
+	    if (u == null) {
+	    	return ResponseEntity.status(401).build();
+	    }
+	    
+	    return ResponseEntity.ok(u.getNombre());
 	}
 
 	@PostMapping("/register")
 	public ResponseEntity<String> signUp(@RequestBody Usuario user) {
-	    String nombre = servicio.signUp(user);
+		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
+			return ResponseEntity.badRequest().build();
+		}
+		
+	    String u = servicio.signUp(user);
 	    
-	    return ResponseEntity.status(201).body(nombre);
+	    return ResponseEntity.status(201).body(u);
 	}
 	
 	@GetMapping("/apks")
@@ -82,6 +96,10 @@ public class ControladorServicio {
 	
 	@GetMapping("/download/{titulo}")
 	public ResponseEntity<Resource> downloadAPK(@PathVariable String titulo) {
+		if (titulo == null) {
+			return ResponseEntity.badRequest().build();
+		}
+		
     	Resource resource = servicio.downloadAPK(titulo);
         
         return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + titulo + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga

@@ -96,28 +96,20 @@ public class Servicio {
 	}
 
 	// Login
-	public String login(Usuario user) {
-		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST); // Devolver un 400 directamente si falta algun valor
-		}
-
+	public Usuario login(Usuario user) {
 		String nombre = user.getNombre().toLowerCase().trim();
 
 		for (Usuario a : usuarios) {
 			if (a.getNombre().equals(nombre) && a.getContraseña().equals(user.getContraseña())) {
-				return nombre;
+				return a;
 			}
 		}
 
-		throw new ResponseStatusException(HttpStatus.UNAUTHORIZED); // Devolver un 401 directamente si las credenciales no coinciden
+		return null;
 	}
 
 	// Sign Up
 	public String signUp(Usuario user) {
-		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST); // Devolver un 400 directamente si falta algun valor
-		}
-
 		String nombre = user.getNombre().toLowerCase().trim();
 
 		for (Usuario u : usuarios) {
