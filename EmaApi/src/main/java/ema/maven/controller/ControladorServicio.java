@@ -34,13 +34,17 @@ public class ControladorServicio {
 			return ResponseEntity.badRequest().build();
 		}
 		
-	    Usuario u = servicio.login(user);
-	    
-	    if (u == null) {
-	    	return ResponseEntity.status(401).build();
-	    }
-	    
-	    return ResponseEntity.ok(u.getNombre());
+		try {
+		    Usuario u = servicio.login(user);
+		    
+		    if (u == null) {
+		    	return ResponseEntity.status(401).build();
+		    }
+		    
+		    return ResponseEntity.ok(u.getNombre());
+		} catch (ResponseStatusException e) {
+			return ResponseEntity.internalServerError().build();
+		}
 	}
 
 	@PostMapping("/register")
@@ -49,9 +53,17 @@ public class ControladorServicio {
 			return ResponseEntity.badRequest().build();
 		}
 		
-	    String u = servicio.signUp(user);
-	    
-	    return ResponseEntity.status(201).body(u);
+		try {
+		    Usuario u = servicio.signUp(user);
+		    
+		    if (u == null) {
+		    	return ResponseEntity.status(409).build();
+		    }
+		    
+		    return ResponseEntity.status(201).body(u.getNombre());
+		} catch (ResponseStatusException e) {
+			return ResponseEntity.internalServerError().build();
+		}
 	}
 	
 	@GetMapping("/apks")
@@ -61,47 +73,111 @@ public class ControladorServicio {
 		return ResponseEntity.ok().body(apks);
 	}
 	
+	@GetMapping("/apk/{titulo}")
+	public ResponseEntity<APK> getAPK(@PathVariable String titulo) {
+		if (titulo == null || titulo.trim().isEmpty()) {
+			return ResponseEntity.badRequest().build();
+		}
+		
+		try {
+		    APK apk = servicio.getAPK(titulo);
+		    
+		    if (apk == null) {
+		    	return ResponseEntity.notFound().build();
+		    }
+		    
+		    return ResponseEntity.ok(apk);
+		} catch (ResponseStatusException e) {
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+	
 	@PostMapping("/apk")
 	public ResponseEntity<APK> addAPK(@RequestBody APK apk) {
 	    if (apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
 	        return ResponseEntity.badRequest().build();
 	    }
 	    
-	    APK creada = servicio.addAPK(apk);
-	    
-	    return ResponseEntity.status(201).body(creada);
+	    try {
+		    APK creada = servicio.addAPK(apk);
+		    
+		    if (creada == null) {
+		    	return ResponseEntity.status(409).build();
+		    }
+		    
+		    return ResponseEntity.status(201).body(creada);
+	    } catch (ResponseStatusException e) {
+			return ResponseEntity.internalServerError().build();
+		}
 	}
 	
 	@PutMapping("/apk/{titulo}")
 	public ResponseEntity<APK> updateAPK(@PathVariable String titulo, @RequestBody APK apk) {
-		if (titulo == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
+		if (titulo == null || titulo.trim().isEmpty() || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
 		
-	    APK actualizada = servicio.updateAPK(titulo, apk);
-	    
-	    return ResponseEntity.ok(actualizada);
+		try {
+		    APK actualizada = servicio.updateAPK(titulo, apk);
+		    
+		    if (actualizada == null) {
+		    	return ResponseEntity.notFound().build();
+		    }
+		    
+		    return ResponseEntity.ok(actualizada);
+		} catch (ResponseStatusException e) {
+			if (e.getStatusCode() == HttpStatus.CONFLICT) {
+				return ResponseEntity.status(409).build();
+			} else {
+				return ResponseEntity.internalServerError().build();
+			}
+		}
 	}
 
 	@DeleteMapping("/apk/{titulo}")
 	public ResponseEntity<Void> deleteAPK(@PathVariable String titulo) {
-		if (titulo == null) {
+		if (titulo == null || titulo.trim().isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
 		
-	    servicio.deleteAPK(titulo);
-	    
-	    return ResponseEntity.noContent().build();
+		try {
+		    servicio.deleteAPK(titulo);
+		    
+		    return ResponseEntity.noContent().build();
+		} catch (ResponseStatusException e) {
+			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+				return ResponseEntity.notFound().build();
+			} else {
+				return ResponseEntity.internalServerError().build();
+			}
+		}
 	}
 	
 	@GetMapping("/download/{titulo}")
 	public ResponseEntity<Resource> downloadAPK(@PathVariable String titulo) {
-		if (titulo == null) {
+		if (titulo == null || titulo.trim().isEmpty()) {
 			return ResponseEntity.badRequest().build();
 		}
 		
-    	Resource resource = servicio.downloadAPK(titulo);
-        
-        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + titulo + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
+		try {
+	    	Resource resource = servicio.downloadAPK(titulo);
+	        
+	        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + titulo + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
+		} catch (ResponseStatusException e) {
+			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+				return ResponseEntity.notFound().build();
+			} else {
+				return ResponseEntity.internalServerError().build();
+			}
+		}
+	}
+	
+	@GetMapping("/hash/{titulo}")
+	public ResponseEntity<String> getHash(@PathVariable String titulo) {
+		if (titulo == null || titulo.trim().isEmpty()) {
+			return ResponseEntity.badRequest().build();
+		}
+		
+		return ResponseEntity.ok().body("");
 	}
 }

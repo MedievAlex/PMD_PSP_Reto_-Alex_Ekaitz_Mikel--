@@ -66,8 +66,7 @@ public class Servicio {
 			File archivoData = new File(USERS_FILE);
 
 			if (archivoData.exists()) {
-				usuarios = mapeador.readValue(archivoData, new TypeReference<ArrayList<Usuario>>() {
-				});
+				usuarios = mapeador.readValue(archivoData, new TypeReference<ArrayList<Usuario>>() {});
 			} else {
 				usuarios = new ArrayList<>();
 
@@ -99,22 +98,26 @@ public class Servicio {
 	public Usuario login(Usuario user) {
 		String nombre = user.getNombre().toLowerCase().trim();
 
-		for (Usuario a : usuarios) {
-			if (a.getNombre().equals(nombre) && a.getContraseña().equals(user.getContraseña())) {
-				return a;
+		try {
+			for (Usuario a : usuarios) {
+				if (a.getNombre().equals(nombre) && a.getContraseña().equals(user.getContraseña())) {
+					return a;
+				}
 			}
+	
+			return null;
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		return null;
 	}
 
 	// Sign Up
-	public String signUp(Usuario user) {
+	public Usuario signUp(Usuario user) {
 		String nombre = user.getNombre().toLowerCase().trim();
 
 		for (Usuario u : usuarios) {
 			if (u.getNombre().equals(nombre)) {
-				throw new ResponseStatusException(HttpStatus.CONFLICT); // Devolver un 409 directamente si el titulo ya existe
+				return null;
 			}
 		}
 
@@ -132,13 +135,17 @@ public class Servicio {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
-		return nombre;
+		return user;
 	}
 
 	// ========== MÉTODOS PARA APKS ==========
 	private String obtenerIcono(String titulo) {
 		try {
-			File carpetaIconos = new File(IMAGES_DIR);
+			File carpetaIconos = new File(IMAGES_DIR); // Crear carpeta si no existe
+			if (!carpetaIconos.exists()) {
+				carpetaIconos.mkdirs();
+			}
+			
 			File[] iconos = carpetaIconos.listFiles();
 
 			if (iconos == null) {
@@ -171,10 +178,16 @@ public class Servicio {
 	private void generarAPKs() {
 		apks.clear();
 
-		new File(APKS_DIR).mkdirs(); // Crear carpetas si no existen
-		new File(IMAGES_DIR).mkdirs();
-
-		File carpetaApks = new File(APKS_DIR);
+		File carpetaFiles = new File(FILES_DIR); // Crear carpeta si no existe
+		if (!carpetaFiles.exists()) {
+			carpetaFiles.mkdirs();
+		}
+		
+		File carpetaApks = new File(APKS_DIR); // Crear carpeta si no existe
+		if (!carpetaApks.exists()) {
+			carpetaApks.mkdirs();
+		}
+				
 		File[] archivos = carpetaApks.listFiles();
 
 		if (archivos == null)
@@ -188,6 +201,7 @@ public class Servicio {
 
 				APK apk = new APK();
 				apk.setTitulo(nombre);
+				apk.setAutor("ema");
 				apk.setDescripcion("Aplicación Android: " + nombre);
 				apk.setImage(icono);
 
@@ -200,24 +214,28 @@ public class Servicio {
 
 	// Obtener todas las APKs
 	public ArrayList<APK> getAPKs() {
-		return new ArrayList<>(apks); // Devolver copia y no lista original
+		return apks;
 	}
 
 	// Obtener una APK
 	public APK getAPK(String titulo) {
-		for (APK apk : apks) {
-			if (apk.getTitulo().equalsIgnoreCase(titulo)) {
-				return apk;
+		try {
+			for (APK apk : apks) {
+				if (apk.getTitulo().equalsIgnoreCase(titulo)) {
+					return apk;
+				}
 			}
+	
+			return null;
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		return null;
 	}
 
 	// Crear una APK en el json
 	public APK addAPK(APK apk) {
 	    if (getAPK(apk.getTitulo()) != null) {
-	        throw new ResponseStatusException(HttpStatus.CONFLICT);
+	        return null;
 	    }
 
 	    if (apk.getDescripcion() == null || apk.getDescripcion().trim().isEmpty()) {
@@ -233,12 +251,12 @@ public class Servicio {
 
 	    try {
 	        guardarJson(APKS_FILE, apks);
+	        
+	        return apk;
 	    } catch (Exception e) {
 	        apks.remove(apk);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR); // Devolver un 500 directamente si hay excepcion
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
-
-	    return apk;
 	}
 
 	// Modificar una APK
@@ -246,7 +264,7 @@ public class Servicio {
 	    APK existente = getAPK(titulo);
 
 	    if (existente == null) {
-	        throw new ResponseStatusException(HttpStatus.NOT_FOUND); // Devolver un 404 directamente si no existe
+	        return null;
 	    }
 
 	    String tituloOriginal = existente.getTitulo();
@@ -254,7 +272,7 @@ public class Servicio {
 
 	    if (apk.getTitulo() != null && !apk.getTitulo().equalsIgnoreCase(titulo)) {
 	        if (getAPK(apk.getTitulo()) != null) {
-	            throw new ResponseStatusException(HttpStatus.CONFLICT); // Devolver un 409 directamente si el titulo ya existe
+	            throw new ResponseStatusException(HttpStatus.CONFLICT);
 	        }
 
 	        existente.setTitulo(apk.getTitulo());
@@ -270,7 +288,7 @@ public class Servicio {
 	        existente.setTitulo(tituloOriginal);
 	        existente.setDescripcion(descripcionOriginal);
 	        
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR); // Devolver un 500 directamente si hay excepcion
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 
 	    return existente;
@@ -281,7 +299,7 @@ public class Servicio {
 	    APK existente = getAPK(titulo);
 
 	    if (existente == null) {
-	        throw new ResponseStatusException(HttpStatus.NOT_FOUND); // Devolver un 404 directamente si no existe
+	        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 	    }
 
 	    apks.remove(existente);
@@ -290,7 +308,7 @@ public class Servicio {
 	        guardarJson(APKS_FILE, apks);
 	    } catch (Exception e) {
 	        apks.add(existente);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR); // Devolver un 500 directamente si hay excepcion
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
 
@@ -301,14 +319,14 @@ public class Servicio {
 	        Resource resource = new UrlResource(path.toUri());
 
 	        if (!resource.exists()) {
-	            throw new ResponseStatusException(HttpStatus.NOT_FOUND); // Devolver un 404 directamente si no existe
+	            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 	        }
 
 	        return resource;
 	    } catch (ResponseStatusException e) {  // Relanzar 404 para que no siempre devuelva un 500
 	        throw e;
 	    } catch (Exception e) {
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR); // Devolver un 500 directamente si hay excepcion
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
 }

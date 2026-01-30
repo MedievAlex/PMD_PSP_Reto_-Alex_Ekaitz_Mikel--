@@ -2,13 +2,15 @@ package ema.maven.model;
 
 public class APK {
 	private String titulo;
+	private String autor;
 	private String descripcion;
 	private String image;
 	
 	public APK() {}
 	
-	public APK(String titulo, String descripcion, String image, String apk) {
+	public APK(String titulo, String autor, String descripcion, String image, String apk) {
 		this.titulo = titulo;
+		this.autor = autor;
 		this.descripcion = descripcion;
 		this.image = image;
 	}
@@ -19,6 +21,14 @@ public class APK {
 
 	public void setTitulo(String titulo) {
 		this.titulo = titulo;
+	}
+	
+	public String getAutor() {
+		return autor;
+	}
+	
+	public void setAutor(String autor) {
+		this.autor = autor;
 	}
 
 	public String getDescripcion() {
@@ -39,7 +49,6 @@ public class APK {
 
 	@Override
 	public String toString() {
-		return "APK [titulo=" + titulo + ", descripcion=" + descripcion + "image=" + image + "]";
+		return "APK [titulo=" + titulo + ", autor=" + autor + ", descripcion=" + descripcion + "image=" + image + "]";
 	}
-	
 }
