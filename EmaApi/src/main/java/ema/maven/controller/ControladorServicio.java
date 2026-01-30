@@ -29,12 +29,14 @@ public class ControladorServicio {
 	@PostMapping("/login")
 	public ResponseEntity<String> login(@RequestBody Usuario user) {
 	    String nombre = servicio.login(user);
+	    
 	    return ResponseEntity.ok(nombre);
 	}
 
 	@PostMapping("/register")
 	public ResponseEntity<String> signUp(@RequestBody Usuario user) {
 	    String nombre = servicio.signUp(user);
+	    
 	    return ResponseEntity.status(201).body(nombre);
 	}
 	
@@ -58,6 +60,10 @@ public class ControladorServicio {
 	
 	@PutMapping("/apk/{titulo}")
 	public ResponseEntity<APK> updateAPK(@PathVariable String titulo, @RequestBody APK apk) {
+		if (titulo == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
+			return ResponseEntity.badRequest().build();
+		}
+		
 	    APK actualizada = servicio.updateAPK(titulo, apk);
 	    
 	    return ResponseEntity.ok(actualizada);
@@ -65,6 +71,10 @@ public class ControladorServicio {
 
 	@DeleteMapping("/apk/{titulo}")
 	public ResponseEntity<Void> deleteAPK(@PathVariable String titulo) {
+		if (titulo == null) {
+			return ResponseEntity.badRequest().build();
+		}
+		
 	    servicio.deleteAPK(titulo);
 	    
 	    return ResponseEntity.noContent().build();
