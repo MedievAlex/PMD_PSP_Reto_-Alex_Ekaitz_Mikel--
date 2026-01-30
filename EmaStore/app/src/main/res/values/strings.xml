@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">EmaStore</string>
+    <string name="login_title">LOGIN</string>
+    <string name="sign_up_title">SIGN UP</string>
+    <string name="app_name">EMAstore</string>
 </resources>
