@@ -38,6 +38,7 @@ public class ControladorServicio {
 	    return ResponseEntity.status(201).body(nombre);
 	}
 	
+	
 	@GetMapping("/apks")
 	public ResponseEntity<ArrayList<APK>> getApks() {
 		ArrayList<APK> apks = servicio.getAPKs();
@@ -52,7 +53,6 @@ public class ControladorServicio {
 	    }
 	    
 	    APK creada = servicio.addAPK(apk);
-	    
 	    return ResponseEntity.status(201).body(creada);
 	}
 	

@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EmaStore">
         <activity
+            android:name=".DetailslayoutActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SignuplayoutActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
