@@ -91,7 +91,8 @@
                 android:layout_width="140dp"
                 android:layout_height="48dp"
                 android:background="@drawable/bg_box"
-                android:text="LOG IN"/>
+                android:text="LOG IN"
+                android:onClick="login"/>
 
             <TextView
                 android:layout_width="wrap_content"

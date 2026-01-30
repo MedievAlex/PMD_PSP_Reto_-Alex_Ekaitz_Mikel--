@@ -29,4 +29,7 @@ public class User extends AppCompatActivity {
                 ", password='" + password + '\'' +
                 '}';
     }
+    public boolean validarCredenciales(String user, String pass) {
+        return this.username.equals(user) && this.password.equals(pass);
+    }
 }
