@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +15,7 @@ import java.util.ArrayList;
 import model.User;
 
 public class LoginActivity extends AppCompatActivity {
-    private ArrayList<User> usuarios = new ArrayList<User>();
+    private final ArrayList<User> usuarios = new ArrayList<User>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,21 +38,17 @@ public class LoginActivity extends AppCompatActivity {
                 TextView password = findViewById(R.id.etPassword);
                 String user = usuario.getText().toString();
                 String pass = password.getText().toString();
-                boolean loginExitoso = false;
                 for (User u : usuarios) {
                     if (u.getUsername().equals(user) && u.getPassword().equals(pass)) {
                         startActivity(new Intent(LoginActivity.this, MainActivity.class));
                         finish();
-                        loginExitoso = true;
                         return;
                     }
                 }
-                if (!loginExitoso) {
                     Toast.makeText(LoginActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
                     usuario.setText("");
                     password.setText("");
                     usuario.requestFocus();
-                }
             }
         });
 
@@ -63,7 +58,6 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
             }
         });
-
     }
     /*@Override
     protected void onDestroy() {
