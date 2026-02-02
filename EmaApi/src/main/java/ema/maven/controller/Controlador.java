@@ -22,10 +22,10 @@ import ema.maven.service.*;
 
 @RestController
 @RequestMapping("api")
-public class ControladorServicio {
+public class Controlador {
 	private final Servicio servicio;
 
-	public ControladorServicio(Servicio servicio) {
+	public Controlador(Servicio servicio) {
 		this.servicio = servicio;
 	}
 	
