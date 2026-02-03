@@ -7,9 +7,6 @@ import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class DetailsActivity extends AppCompatActivity {
 
@@ -17,7 +14,7 @@ public class DetailsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.details);
+        setContentView(R.layout.activity_details);
         Button btnExit = findViewById(R.id.btnExit);
         //Button btnLogout = findViewById(R.id.btnLogout);
         Button btnBack = findViewById(R.id.btnBack);
