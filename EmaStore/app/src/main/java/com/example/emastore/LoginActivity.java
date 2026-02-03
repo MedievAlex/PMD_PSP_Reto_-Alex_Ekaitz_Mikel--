@@ -20,7 +20,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.login);
+        setContentView(R.layout.activity_login);
         //startService(new Intent(this, AudioService.class));
         usuarios.add(new User("admin", "1234"));
         usuarios.add(new User("usuario1", "password1"));
