@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 
 import model.User;
-
+    //RetroFit para la conexion con psp
 public class LoginActivity extends AppCompatActivity {
     private final ArrayList<User> usuarios = new ArrayList<User>();
     @Override
@@ -31,6 +31,8 @@ public class LoginActivity extends AppCompatActivity {
         });*/
         Button btnLogin = findViewById(R.id.btnLogin);
         Button btnSignUp = findViewById(R.id.btnSignup);
+        Button btnExit = findViewById(R.id.btnExit);
+
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,11 +60,13 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
             }
         });
+        btnExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
     }
-    /*@Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }*/
 
 
 }

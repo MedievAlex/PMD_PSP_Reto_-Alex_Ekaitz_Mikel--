@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:padding="12dp"
     android:id="@+id/details">
-    
+
     <LinearLayout
         android:id="@+id/header_container"
         android:layout_width="0dp"

@@ -1,31 +1,85 @@
 package com.example.emastore;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.widget.TextView;
-
-import androidx.activity.EdgeToEdge;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
-
-import model.User;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int PERMISSION_REQUEST_CODE = 1001;
+    private RecyclerView recyclerView;
+    private MenuAdapter adapter;
+    private List<MenuItem> menuItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        /*ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.login), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });*/
+
+        initViews();
+
+        setupRecyclerView();
+
+        setupButtons();
+    }
+
+    private void initViews() {
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
     }
 
 
+    private void setupRecyclerView() {
+        menuItems = new ArrayList<MenuItem>();
+        menuItems.add(new MenuItem(1, "OPCIÓN 1", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(2, "OPCIÓN 2", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(3, "OPCIÓN 3", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(4, "OPCIÓN 4", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(5, "OPCIÓN 5", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(6, "OPCIÓN 6", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(7, "OPCIÓN 7", R.drawable.ic_launcher_foreground));
+
+        adapter = new MenuAdapter(menuItems, new MenuAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(MenuItem item) {
+                Toast.makeText(MainActivity.this,
+                        "Clicked: " + item.getTitle(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        recyclerView.setAdapter(adapter);
+    }
+
+    private void setupButtons() {
+        Button btnLogout = findViewById(R.id.btnLogout);
+        Button btnExit = findViewById(R.id.btnExit);
+
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            }
+        });
+
+        btnExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+    }
 }

@@ -44,6 +44,7 @@ public class SignupActivity extends AppCompatActivity {
         btnTogglePass = findViewById(R.id.btnTogglePass);
         Button btnSignUp = findViewById(R.id.btnSignup);
         Button btnLogin = findViewById(R.id.btnLogin);
+        Button btnExit = findViewById(R.id.btnExit);
         etUser = findViewById(R.id.etUser);
 
         btnTogglePass.setOnClickListener(new View.OnClickListener() {
@@ -69,6 +70,12 @@ public class SignupActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+            }
+        });
+        btnExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
             }
         });
     }
