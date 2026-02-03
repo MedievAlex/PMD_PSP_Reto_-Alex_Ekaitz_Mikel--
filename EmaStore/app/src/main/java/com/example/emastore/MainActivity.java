@@ -1,17 +1,11 @@
 package com.example.emastore;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
@@ -19,7 +13,6 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int PERMISSION_REQUEST_CODE = 1001;
     private RecyclerView recyclerView;
     private MenuAdapter adapter;
     private List<MenuItem> menuItems;
@@ -30,27 +23,30 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-
         setupRecyclerView();
-
         setupButtons();
     }
 
     private void initViews() {
         recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
+        recyclerView.setLayoutManager(gridLayoutManager);
+
+        recyclerView.setHasFixedSize(true);
     }
 
-
     private void setupRecyclerView() {
-        menuItems = new ArrayList<MenuItem>();
-        menuItems.add(new MenuItem(1, "OPCIÓN 1", R.drawable.ic_launcher_foreground));
+        menuItems = new ArrayList<>();
+
+        menuItems.add(new MenuItem(1, "OPCIÓN 1", R.drawable.ic_launcher_background));
         menuItems.add(new MenuItem(2, "OPCIÓN 2", R.drawable.ic_launcher_foreground));
-        menuItems.add(new MenuItem(3, "OPCIÓN 3", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(3, "OPCIÓN 3", R.drawable.ic_launcher_background));
         menuItems.add(new MenuItem(4, "OPCIÓN 4", R.drawable.ic_launcher_foreground));
-        menuItems.add(new MenuItem(5, "OPCIÓN 5", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(5, "OPCIÓN 5", R.drawable.ic_launcher_background));
         menuItems.add(new MenuItem(6, "OPCIÓN 6", R.drawable.ic_launcher_foreground));
-        menuItems.add(new MenuItem(7, "OPCIÓN 7", R.drawable.ic_launcher_foreground));
+        menuItems.add(new MenuItem(7, "OPCIÓN 7", R.drawable.ic_launcher_background));
+
 
         adapter = new MenuAdapter(menuItems, new MenuAdapter.OnItemClickListener() {
             @Override
@@ -58,6 +54,16 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this,
                         "Clicked: " + item.getTitle(),
                         Toast.LENGTH_SHORT).show();
+
+                switch (item.getId()) {
+                    case 1:
+                        // startActivity(new Intent(MainActivity.this, Opcion1Activity.class));
+                        break;
+                    case 2:
+                        // startActivity(new Intent(MainActivity.this, Opcion2Activity.class));
+                        break;
+                    // ... etc
+                }
             }
         });
 
@@ -72,13 +78,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                finish();
             }
         });
 
         btnExit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                finishAffinity();
+                System.exit(0);
             }
         });
     }

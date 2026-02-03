@@ -9,58 +9,55 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder> {
+public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ViewHolder> {
 
-    private List<MenuItem> itemList;
+    private List<MenuItem> menuItems;
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(MenuItem item);
     }
 
-    public MenuAdapter(List<MenuItem> itemList, OnItemClickListener listener) {
-        this.itemList = itemList;
+    public MenuAdapter(List<MenuItem> menuItems, OnItemClickListener listener) {
+        this.menuItems = menuItems;
         this.listener = listener;
     }
 
     @NonNull
     @Override
-    public MenuViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_menu, parent, false);
-        return new MenuViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MenuViewHolder holder, int position) {
-        MenuItem item = itemList.get(position);
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        MenuItem item = menuItems.get(position);
 
-        holder.titleView.setText(item.getTitle());
-        holder.imageView.setImageResource(item.getImageResId());
+        holder.textViewTitle.setText(item.getTitle());
+        holder.imageViewIcon.setImageResource(item.getIconResource());
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (listener != null) {
-                    listener.onItemClick(item);
-                }
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(item);
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return itemList.size();
+        return menuItems.size();
     }
 
-    public static class MenuViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
-        TextView titleView;
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        ImageView imageViewIcon;
+        TextView textViewTitle;
 
-        public MenuViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imageView = itemView.findViewById(R.id.item_image);
-            titleView = itemView.findViewById(R.id.item_title);
+            imageViewIcon = itemView.findViewById(R.id.imageViewIcon);
+            textViewTitle = itemView.findViewById(R.id.textViewTitle);
         }
     }
 }
