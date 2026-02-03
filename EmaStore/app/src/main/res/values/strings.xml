@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">EmaStore</string>
-    <string name="app_name">EmaStore</string>
+    <string name="login">LOGIN</string>
+    <string name="sign_up">SIGN UP</string>
+    <string name="menu">MENU</string>
+    <string name="details">DETALLES</string>
+    <string name="log_out">LOG OUT</string>
+    <string name="exit">EXIT</string>
+    <string name="back">BACK</string>
+    <string name="download">DESCARGAR</string>
 </resources>

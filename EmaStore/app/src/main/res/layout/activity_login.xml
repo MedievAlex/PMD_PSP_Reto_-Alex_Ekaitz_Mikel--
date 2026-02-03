@@ -26,25 +26,25 @@
             android:gravity="center_vertical">
 
             <TextView
+                android:id="@+id/title_login"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:id="@+id/title_login"
                 android:gravity="start|center_vertical"
-                android:text="LOG IN"
+                android:paddingStart="16dp"
+                android:text="@string/login"
                 android:textSize="28sp"
-                android:textStyle="bold"
-                android:paddingStart="16dp"/>
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnExit"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text="Exit"
-                android:textSize="16sp"
-                android:paddingHorizontal="20dp"
+                android:layout_marginEnd="16dp"
                 android:background="@drawable/bg_box"
-                android:layout_marginEnd="16dp"/>
+                android:paddingHorizontal="20dp"
+                android:text="@string/exit"
+                android:textSize="16sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -110,16 +110,16 @@
                 android:layout_width="140dp"
                 android:layout_height="48dp"
                 android:background="@drawable/bg_box"
-                android:text="LOG IN" />
+                android:text="@string/login" />
 
             <Button
-                style="?android:attr/borderlessButtonStyle"
                 android:id="@+id/btnSignup"
+                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
                 android:layout_marginTop="12dp"
                 android:background="@android:color/transparent"
-                android:text="Sign Up"
+                android:text="@string/sign_up"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
                 android:textStyle="italic" />
