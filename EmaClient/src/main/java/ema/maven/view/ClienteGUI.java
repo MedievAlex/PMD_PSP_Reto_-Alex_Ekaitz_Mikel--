@@ -12,11 +12,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.util.Base64;
 import javax.imageio.ImageIO;
 import java.util.List;
 
@@ -25,47 +30,46 @@ public class ClienteGUI {
 
     private JFrame frame;
     private final Servicio servicio;
+    
+ // Panel Usuarios
+    private JTextField txtNombre;
+    private JPasswordField txtPassword;
+    private JTextArea textoUsuarios;
 
     // Panel APKs - Buscar y Listar
     private JTextField txtTitulo;
     private JTextArea textoAPK;
     private JLabel lblImagen;
 
-    // Panel Usuarios
-    private JTextField txtNombre;
-    private JPasswordField txtPassword;
-    private JTextArea textoUsuarios;
-
     // Panel Crear APK
     private JTextField txtNuevoTitulo;
+    private JTextField txtNuevoAutor;
     private JTextField txtNuevaDescripcion;
-    private JTextField txtNuevaVersion;
-    private JTextField txtNuevoSize;
-    private JTextField txtNuevoCompany;
-    private JTextField txtNuevaImage;
+    private JTextField txtNuevaImagenPath;
+    private String imagenBase64Nueva = "";
     private JTextArea textoCrearAPK;
 
     // Panel Actualizar APK
     private JTextField txtActualizarTitulo;
+    private JTextField txtActualizarAutor;
     private JTextField txtActualizarDescripcion;
-    private JTextField txtActualizarVersion;
-    private JTextField txtActualizarSize;
-    private JTextField txtActualizarCompany;
-    private JTextField txtActualizarImage;
+    private JTextField txtActualizarImagenPath;
+    private String imagenBase64Actualizar = "";
     private JTextArea textoActualizarAPK;
 
     // Panel Eliminar APK
     private JTextField txtEliminarTitulo;
     private JTextArea textoEliminarAPK;
+    
+ // Panel Descargar
+    private JTextField txtDescargarTitulo;
+    private JTextArea textoDescargar;
 
     // Panel Hash
     private JTextField txtHashTitulo;
+    private JTextField txtHashArchivoLocal;
     private JComboBox<String> comboAlgoritmo;
     private JTextArea textoHash;
-
-    // Panel Descargar
-    private JTextField txtDescargarTitulo;
-    private JTextArea textoDescargar;
 
     public ClienteGUI(Servicio servicio) {
         this.servicio = servicio;
@@ -78,12 +82,12 @@ public class ClienteGUI {
 
     private void initialize() {
         frame = new JFrame("Cliente APK - Todas las funcionalidades");
-        frame.setBounds(100, 100, 900, 600);
+        frame.setBounds(100, 100, 1000, 650);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JTabbedPane tabbedPane = new JTabbedPane();
         
-     // ==================== PESTAÑA 1: Usuarios ====================
+        // ==================== PESTAÑA 1: Usuarios ====================
         tabbedPane.addTab("Usuarios", crearPanelUsuarios());
 
         // ==================== PESTAÑA 2: Buscar y Listar APKs ====================
@@ -107,7 +111,7 @@ public class ClienteGUI {
         frame.getContentPane().add(tabbedPane);
     }
     
- // ==================== PANEL 1: Usuarios ====================
+    // ==================== PANEL 1: Usuarios ====================
     private JPanel crearPanelUsuarios() {
         JPanel panel = new JPanel(new BorderLayout());
         
@@ -171,25 +175,27 @@ public class ClienteGUI {
     private JPanel crearPanelCrearAPK() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        JPanel formPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         txtNuevoTitulo = new JTextField(20);
+        txtNuevoAutor = new JTextField(20);
         txtNuevaDescripcion = new JTextField(20);
-        txtNuevaVersion = new JTextField(20);
-        txtNuevoSize = new JTextField(20);
-        txtNuevoCompany = new JTextField(20);
-        txtNuevaImage = new JTextField(20);
+        txtNuevaImagenPath = new JTextField(20);
+        txtNuevaImagenPath.setEditable(false);
+        
+        JButton btnSeleccionarImagen = new JButton("Seleccionar imagen");
+        JButton btnCrear = new JButton("Crear APK");
         
         formPanel.add(new JLabel("Título:"));
         formPanel.add(txtNuevoTitulo);
+        formPanel.add(new JLabel("Autor:"));
+        formPanel.add(txtNuevoAutor);
         formPanel.add(new JLabel("Descripción:"));
         formPanel.add(txtNuevaDescripcion);
-        //formPanel.add(new JLabel("Imagen (Base64):"));
-        //formPanel.add(txtNuevaImage);
-        
-        JButton btnCrear = new JButton("Crear APK");
-        formPanel.add(new JLabel(""));
+        formPanel.add(new JLabel("Imagen:"));
+        formPanel.add(txtNuevaImagenPath);
+        formPanel.add(btnSeleccionarImagen);
         formPanel.add(btnCrear);
 
         textoCrearAPK = new JTextArea();
@@ -198,6 +204,7 @@ public class ClienteGUI {
         panel.add(formPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(textoCrearAPK), BorderLayout.CENTER);
 
+        btnSeleccionarImagen.addActionListener(e -> seleccionarImagenNueva());
         btnCrear.addActionListener(e -> crearAPK());
 
         return panel;
@@ -207,26 +214,30 @@ public class ClienteGUI {
     private JPanel crearPanelActualizarAPK() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        JPanel formPanel = new JPanel(new GridLayout(8, 2, 5, 5));
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         txtActualizarTitulo = new JTextField(20);
+        txtActualizarAutor = new JTextField(20);
         txtActualizarDescripcion = new JTextField(20);
-        txtActualizarVersion = new JTextField(20);
-        txtActualizarSize = new JTextField(20);
-        txtActualizarCompany = new JTextField(20);
-        txtActualizarImage = new JTextField(20);
+        txtActualizarImagenPath = new JTextField(20);
+        txtActualizarImagenPath.setEditable(false);
         
-        formPanel.add(new JLabel("Título actual (buscar):"));
+        JButton btnCargar = new JButton("Cargar APK existente");
+        JButton btnSeleccionarImagen = new JButton("Cambiar imagen");
+        JButton btnActualizar = new JButton("Actualizar APK");
+        
+        formPanel.add(new JLabel("Título actual:"));
         formPanel.add(txtActualizarTitulo);
+        formPanel.add(new JLabel("Nuevo Autor:"));
+        formPanel.add(txtActualizarAutor);
         formPanel.add(new JLabel("Nueva Descripción:"));
         formPanel.add(txtActualizarDescripcion);
-        //formPanel.add(new JLabel("Nueva Imagen (Base64):"));
-        //formPanel.add(txtActualizarImage);
-        
-        JButton btnActualizar = new JButton("Actualizar APK");
-        JButton btnCargar = new JButton("Cargar APK existente");
+        formPanel.add(new JLabel("Nueva Imagen:"));
+        formPanel.add(txtActualizarImagenPath);
         formPanel.add(btnCargar);
+        formPanel.add(btnSeleccionarImagen);
+        formPanel.add(new JLabel(""));
         formPanel.add(btnActualizar);
 
         textoActualizarAPK = new JTextArea();
@@ -236,6 +247,7 @@ public class ClienteGUI {
         panel.add(new JScrollPane(textoActualizarAPK), BorderLayout.CENTER);
 
         btnCargar.addActionListener(e -> cargarAPKParaActualizar());
+        btnSeleccionarImagen.addActionListener(e -> seleccionarImagenActualizar());
         btnActualizar.addActionListener(e -> actualizarAPK());
 
         return panel;
@@ -266,7 +278,7 @@ public class ClienteGUI {
         return panel;
     }
     
- // ==================== PANEL 6: Descargar ====================
+    // ==================== PANEL 6: Descargar ====================
     private JPanel crearPanelDescargar() {
         JPanel panel = new JPanel(new BorderLayout());
         
@@ -295,18 +307,30 @@ public class ClienteGUI {
     private JPanel crearPanelHash() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        JPanel formPanel = new JPanel();
+        JPanel formPanel = new JPanel(new GridLayout(5, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         txtHashTitulo = new JTextField(20);
+        txtHashArchivoLocal = new JTextField(20);
+        txtHashArchivoLocal.setEditable(false);
+        txtHashArchivoLocal.setFocusable(false);
         comboAlgoritmo = new JComboBox<>(new String[]{"MD5", "SHA-1", "SHA-256"});
-        JButton btnCalcularHash = new JButton("Calcular Hash");
         
-        formPanel.add(new JLabel("Título de la APK:"));
+        JButton btnCalcularHashServidor = new JButton("Hash del servidor");
+        JButton btnSeleccionarArchivo = new JButton("Seleccionar archivo local");
+        JButton btnCalcularHashLocal = new JButton("Hash del archivo local");
+        JButton btnComparar = new JButton("Comparar ambos");
+        
+        formPanel.add(new JLabel("Título APK (servidor):"));
         formPanel.add(txtHashTitulo);
+        formPanel.add(new JLabel("Archivo local:"));
+        formPanel.add(txtHashArchivoLocal);
         formPanel.add(new JLabel("Algoritmo:"));
         formPanel.add(comboAlgoritmo);
-        formPanel.add(btnCalcularHash);
+        formPanel.add(btnCalcularHashServidor);
+        formPanel.add(btnSeleccionarArchivo);
+        formPanel.add(btnCalcularHashLocal);
+        formPanel.add(btnComparar);
 
         textoHash = new JTextArea();
         textoHash.setEditable(false);
@@ -314,9 +338,195 @@ public class ClienteGUI {
         panel.add(formPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(textoHash), BorderLayout.CENTER);
 
-        btnCalcularHash.addActionListener(e -> calcularHash());
+        btnCalcularHashServidor.addActionListener(e -> calcularHashServidor());
+        btnSeleccionarArchivo.addActionListener(e -> seleccionarArchivoHash());
+        btnCalcularHashLocal.addActionListener(e -> calcularHashLocal());
+        btnComparar.addActionListener(e -> compararHashes());
 
         return panel;
+    }
+
+    // ==================== MÉTODOS PARA IMÁGENES ====================
+    
+    private void seleccionarImagenNueva() {
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+            "Imágenes (PNG, JPG, JPEG)", "png", "jpg", "jpeg");
+        fileChooser.setFileFilter(filter);
+        
+        int result = fileChooser.showOpenDialog(frame);
+        
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
+                String extension = getFileExtension(selectedFile.getName()).toLowerCase();
+                String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
+                imagenBase64Nueva = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
+                txtNuevaImagenPath.setText(selectedFile.getName());
+                textoCrearAPK.setText("Imagen seleccionada: " + selectedFile.getName());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
+            }
+        }
+    }
+    
+    private void seleccionarImagenActualizar() {
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+            "Imágenes (PNG, JPG, JPEG)", "png", "jpg", "jpeg");
+        fileChooser.setFileFilter(filter);
+        
+        int result = fileChooser.showOpenDialog(frame);
+        
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
+                String extension = getFileExtension(selectedFile.getName()).toLowerCase();
+                String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
+                imagenBase64Actualizar = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
+                txtActualizarImagenPath.setText(selectedFile.getName());
+                textoActualizarAPK.setText("Imagen seleccionada: " + selectedFile.getName());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
+            }
+        }
+    }
+    
+    private String getFileExtension(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+        return (lastDot == -1) ? "" : filename.substring(lastDot + 1);
+    }
+
+    // ==================== MÉTODOS PARA HASH ====================
+    
+    private void seleccionarArchivoHash() {
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Archivos APK", "apk");
+        fileChooser.setFileFilter(filter);
+        
+        int result = fileChooser.showOpenDialog(frame);
+        
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            txtHashArchivoLocal.setText(selectedFile.getAbsolutePath());
+            textoHash.setText("Archivo seleccionado: " + selectedFile.getName());
+        }
+    }
+    
+    private void calcularHashLocal() {
+        String rutaArchivo = txtHashArchivoLocal.getText().trim();
+        
+        if (rutaArchivo.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Selecciona un archivo local primero");
+            return;
+        }
+        
+        String algoritmo = (String) comboAlgoritmo.getSelectedItem();
+        textoHash.setText("Calculando hash " + algoritmo + " del archivo local...");
+        
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                File archivo = new File(rutaArchivo);
+                MessageDigest digest = MessageDigest.getInstance(algoritmo);
+                
+                try (FileInputStream fis = new FileInputStream(archivo)) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        digest.update(buffer, 0, bytesRead);
+                    }
+                }
+                
+                byte[] hashBytes = digest.digest();
+                StringBuilder hexString = new StringBuilder();
+                for (byte b : hashBytes) {
+                    hexString.append(String.format("%02X", b));
+                }
+                
+                return hexString.toString();
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    String hash = get();
+                    textoHash.setText("Hash " + algoritmo + " (archivo local):\n\n" + hash);
+                } catch (Exception e) {
+                    textoHash.setText("Error calculando hash local: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+    
+    private void compararHashes() {
+        String titulo = txtHashTitulo.getText().trim();
+        String rutaArchivo = txtHashArchivoLocal.getText().trim();
+        
+        if (titulo.isEmpty() || rutaArchivo.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Introduce el título y selecciona el archivo local");
+            return;
+        }
+        
+        String algoritmo = (String) comboAlgoritmo.getSelectedItem();
+        textoHash.setText("Comparando hashes...");
+        
+        new SwingWorker<String, Void>() {
+            private String hashServidor;
+            private String hashLocal;
+            
+            @Override
+            protected String doInBackground() throws Exception {
+                // Calcular hash del servidor
+                Mono<String> mono = servicio.getHash(titulo, algoritmo);
+                hashServidor = mono.block();
+                
+                // Calcular hash local
+                File archivo = new File(rutaArchivo);
+                MessageDigest digest = MessageDigest.getInstance(algoritmo);
+                
+                try (FileInputStream fis = new FileInputStream(archivo)) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        digest.update(buffer, 0, bytesRead);
+                    }
+                }
+                
+                byte[] hashBytes = digest.digest();
+                StringBuilder hexString = new StringBuilder();
+                for (byte b : hashBytes) {
+                    hexString.append(String.format("%02X", b));
+                }
+                hashLocal = hexString.toString();
+                
+                return hashServidor.equals(hashLocal) ? "IGUALES" : "DIFERENTES";
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    String resultado = get();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("=== COMPARACIÓN DE HASHES (" + algoritmo + ") ===\n\n");
+                    sb.append("Hash del servidor:\n" + hashServidor + "\n\n");
+                    sb.append("Hash del archivo local:\n" + hashLocal + "\n\n");
+                    sb.append("Resultado: " + resultado + "\n\n");
+                    
+                    if (resultado.equals("IGUALES")) {
+                        sb.append("Los archivos son idénticos. La descarga fue exitosa.");
+                    } else {
+                        sb.append("Los archivos son diferentes. Puede haber un error en la descarga.");
+                    }
+                    
+                    textoHash.setText(sb.toString());
+                } catch (Exception e) {
+                    mostrarError(e, textoHash);
+                }
+            }
+        }.execute();
     }
 
     // ==================== MÉTODOS DE ACCIÓN ====================
@@ -451,8 +661,9 @@ public class ClienteGUI {
             protected APK doInBackground() {
                 APK apk = new APK();
                 apk.setTitulo(titulo);
+                apk.setAutor(txtNuevoAutor.getText().trim());
                 apk.setDescripcion(txtNuevaDescripcion.getText().trim());
-                apk.setImage(txtNuevaImage.getText().trim());
+                apk.setImage(imagenBase64Nueva);
 
                 Mono<APK> mono = servicio.addAPK(apk);
                 return mono.block();
@@ -492,8 +703,10 @@ public class ClienteGUI {
                 try {
                     APK apk = get();
                     if (apk != null) {
+                        txtActualizarAutor.setText(apk.getAutor() != null ? apk.getAutor() : "");
                         txtActualizarDescripcion.setText(apk.getDescripcion() != null ? apk.getDescripcion() : "");
-                        txtActualizarImage.setText(apk.getImage() != null ? apk.getImage() : "");
+                        imagenBase64Actualizar = apk.getImage() != null ? apk.getImage() : "";
+                        txtActualizarImagenPath.setText(imagenBase64Actualizar.isEmpty() ? "" : "Imagen actual");
                         textoActualizarAPK.setText("APK cargada. Modifica los campos y pulsa 'Actualizar APK'");
                     }
                 } catch (Exception e) {
@@ -517,8 +730,9 @@ public class ClienteGUI {
             protected APK doInBackground() {
                 APK apk = new APK();
                 apk.setTitulo(titulo);
+                apk.setAutor(txtActualizarAutor.getText().trim());
                 apk.setDescripcion(txtActualizarDescripcion.getText().trim());
-                apk.setImage(txtActualizarImage.getText().trim());
+                apk.setImage(imagenBase64Actualizar);
 
                 Mono<APK> mono = servicio.updateAPK(titulo, apk);
                 return mono.block();
@@ -577,36 +791,7 @@ public class ClienteGUI {
             }
         }.execute();
     }
-
-    private void calcularHash() {
-        String titulo = txtHashTitulo.getText().trim();
-        if (titulo.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Introduce el título de la APK");
-            return;
-        }
-
-        String algoritmo = (String) comboAlgoritmo.getSelectedItem();
-        textoHash.setText("Calculando hash " + algoritmo + "...");
-
-        new SwingWorker<String, Void>() {
-            @Override
-            protected String doInBackground() {
-                Mono<String> mono = servicio.getHash(titulo, algoritmo);
-                return mono.block();
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    String hash = get();
-                    textoHash.setText("Hash " + algoritmo + " de '" + titulo + "':\n\n" + hash);
-                } catch (Exception e) {
-                    mostrarError(e, textoHash);
-                }
-            }
-        }.execute();
-    }
-
+    
     private void descargarAPK() {
         String titulo = txtDescargarTitulo.getText().trim();
         if (titulo.isEmpty()) {
@@ -649,6 +834,35 @@ public class ClienteGUI {
                     }
                 } catch (Exception e) {
                     mostrarError(e, textoDescargar);
+                }
+            }
+        }.execute();
+    }
+
+    private void calcularHashServidor() {
+        String titulo = txtHashTitulo.getText().trim();
+        if (titulo.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Introduce el título de la APK");
+            return;
+        }
+
+        String algoritmo = (String) comboAlgoritmo.getSelectedItem();
+        textoHash.setText("Calculando hash " + algoritmo + " del servidor...");
+
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() {
+                Mono<String> mono = servicio.getHash(titulo, algoritmo);
+                return mono.block();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String hash = get();
+                    textoHash.setText("Hash " + algoritmo + " de '" + titulo + "' (servidor):\n\n" + hash);
+                } catch (Exception e) {
+                    mostrarError(e, textoHash);
                 }
             }
         }.execute();
@@ -699,19 +913,17 @@ public class ClienteGUI {
 
     private void limpiarCamposCrear() {
         txtNuevoTitulo.setText("");
+        txtNuevoAutor.setText("");
         txtNuevaDescripcion.setText("");
-        txtNuevaVersion.setText("");
-        txtNuevoSize.setText("");
-        txtNuevoCompany.setText("");
-        txtNuevaImage.setText("");
+        txtNuevaImagenPath.setText("");
+        imagenBase64Nueva = "";
     }
 
     private void limpiarCamposActualizar() {
         txtActualizarTitulo.setText("");
+        txtActualizarAutor.setText("");
         txtActualizarDescripcion.setText("");
-        txtActualizarVersion.setText("");
-        txtActualizarSize.setText("");
-        txtActualizarCompany.setText("");
-        txtActualizarImage.setText("");
+        txtActualizarImagenPath.setText("");
+        imagenBase64Actualizar = "";
     }
 }
