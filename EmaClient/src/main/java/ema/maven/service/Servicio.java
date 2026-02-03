@@ -4,6 +4,7 @@ import ema.maven.model.APK;
 import ema.maven.model.Usuario;
 
 import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -18,6 +19,9 @@ public class Servicio {
     public Servicio() {
         this.webClient = WebClient.builder()
                 .baseUrl("http://localhost:8080/api")
+                .codecs(configurer -> configurer // Configurar buffer a 10mb para la descarga de las apks
+                        .defaultCodecs()
+                        .maxInMemorySize(10 * 1024 * 1024))
                 .build();
     }
 
@@ -87,7 +91,13 @@ public class Servicio {
     public Mono<Resource> downloadAPK(String titulo) {
         return webClient.get()
                 .uri("/download/{titulo}", titulo)
-                .retrieve()
-                .bodyToMono(Resource.class);
+                .accept(MediaType.APPLICATION_OCTET_STREAM) // Indica que es un archivo binario
+                .exchangeToMono(response -> {
+                    if (response.statusCode().is2xxSuccessful()) {
+                        return response.bodyToMono(Resource.class);
+                    } else {
+                        return response.createException().flatMap(Mono::error);
+                    }
+                });
     }
 }
