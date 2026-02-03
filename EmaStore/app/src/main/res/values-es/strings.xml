@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login">INICIAR SESION</string>
+    <string name="sign_up">REGISTRARSE</string>
+    <string name="menu">MENU</string>
+    <string name="details">DETALLES</string>
+    <string name="log_out">CERRAR SESION</string>
+    <string name="exit">SALIR</string>
+    <string name="back">ATRAS</string>
+    <string name="download">DESCARGAR</string>
+</resources>
