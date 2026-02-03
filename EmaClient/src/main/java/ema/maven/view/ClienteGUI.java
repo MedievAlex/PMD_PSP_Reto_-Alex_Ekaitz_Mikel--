@@ -5,14 +5,17 @@ import ema.maven.model.APK;
 import ema.maven.model.Usuario;
 
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import javax.imageio.ImageIO;
+import java.util.List;
 
 @Component
 public class ClienteGUI {
@@ -49,9 +52,11 @@ public class ClienteGUI {
         JPanel topPanelAPK = new JPanel();
         txtTitulo = new JTextField(20);
         JButton btnBuscar = new JButton("Buscar APK");
+        JButton btnListar = new JButton("Listar todas las APKs");
         topPanelAPK.add(new JLabel("Título:"));
         topPanelAPK.add(txtTitulo);
         topPanelAPK.add(btnBuscar);
+        topPanelAPK.add(btnListar);
 
         textoAPK = new JTextArea();
         textoAPK.setEditable(false);
@@ -64,11 +69,8 @@ public class ClienteGUI {
         panelAPK.add(scrollAPK, BorderLayout.CENTER);
         panelAPK.add(lblImagen, BorderLayout.SOUTH);
 
-        btnBuscar.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                buscarAPK();
-            }
-        });
+        btnBuscar.addActionListener(e -> buscarAPK());
+        btnListar.addActionListener(e -> listarTodasAPKs());
 
         tabbedPane.addTab("APKs", panelAPK);
 
@@ -93,24 +95,16 @@ public class ClienteGUI {
         panelUsuarios.add(formPanel, BorderLayout.NORTH);
         panelUsuarios.add(new JScrollPane(textoUsuarios), BorderLayout.CENTER);
 
-        btnLogin.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                loginUsuario();
-            }
-        });
-
-        btnRegistro.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                registrarUsuario();
-            }
-        });
+        btnLogin.addActionListener(e -> loginUsuario());
+        btnRegistro.addActionListener(e -> registrarUsuario());
 
         tabbedPane.addTab("Usuarios", panelUsuarios);
 
         frame.getContentPane().add(tabbedPane);
     }
 
-    // -------------------- Métodos con SwingWorker --------------------
+    // -------------------- Métodos con SwingWorker + Mono/Flux --------------------
+
     private void buscarAPK() {
         String titulo = txtTitulo.getText().trim();
         if (titulo.isEmpty()) {
@@ -124,45 +118,44 @@ public class ClienteGUI {
         new SwingWorker<APK, Void>() {
             @Override
             protected APK doInBackground() {
-                return servicio.getAPK(titulo); // bloquea en hilo de fondo
+                Mono<APK> mono = servicio.getAPK(titulo);
+                return mono.block();
             }
 
             @Override
             protected void done() {
                 try {
                     APK apk = get();
-                    if (apk != null) {
-                        textoAPK.setText(apk.toString());
-
-                        if (apk.getImage() != null && apk.getImage().startsWith("data:image")) {
-                            String base64 = apk.getImage().split(",")[1];
-                            byte[] bytes = java.util.Base64.getDecoder().decode(base64);
-                            BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-
-                            int maxWidth = 400;
-                            int maxHeight = 200;
-                            int width = img.getWidth();
-                            int height = img.getHeight();
-                            if (width > maxWidth || height > maxHeight) {
-                                double scale = Math.min((double) maxWidth / width, (double) maxHeight / height);
-                                width = (int) (width * scale);
-                                height = (int) (height * scale);
-                                Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                                lblImagen.setIcon(new ImageIcon(scaled));
-                            } else {
-                                lblImagen.setIcon(new ImageIcon(img));
-                            }
-                        } else {
-                            lblImagen.setIcon(null);
-                        }
-
-                    } else {
-                        textoAPK.setText("No se encontró la APK: " + titulo);
-                        lblImagen.setIcon(null);
-                    }
+                    mostrarAPK(apk);
                 } catch (Exception e) {
-                    textoAPK.setText("Error al consultar la API: " + e.getMessage());
-                    lblImagen.setIcon(null);
+                    mostrarError(e, textoAPK);
+                }
+            }
+        }.execute();
+    }
+
+    private void listarTodasAPKs() {
+        textoAPK.setText("Cargando todas las APKs...");
+        lblImagen.setIcon(null);
+
+        new SwingWorker<List<APK>, Void>() {
+            @Override
+            protected List<APK> doInBackground() {
+                Flux<APK> flux = servicio.getAPKs();
+                return flux.collectList().block();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<APK> lista = get();
+                    StringBuilder sb = new StringBuilder();
+                    for (APK apk : lista) {
+                        sb.append(apk.toString()).append("\n\n");
+                    }
+                    textoAPK.setText(sb.toString());
+                } catch (Exception e) {
+                    mostrarError(e, textoAPK);
                 }
             }
         }.execute();
@@ -178,19 +171,21 @@ public class ClienteGUI {
         }
 
         textoUsuarios.setText("Conectando...");
-        new SwingWorker<Usuario, Void>() {
+
+        new SwingWorker<String, Void>() {
             @Override
-            protected Usuario doInBackground() {
-                return servicio.login(new Usuario(nombre, pass));
+            protected String doInBackground() {
+                Mono<String> mono = servicio.login(new Usuario(nombre, pass));
+                return mono.block();
             }
 
             @Override
             protected void done() {
                 try {
-                    Usuario u = get();
-                    textoUsuarios.setText(u != null ? "Login correcto: " + u.getNombre() : "Login fallido");
+                    String nombreUsuario = get();
+                    textoUsuarios.setText("Login correcto: " + nombreUsuario);
                 } catch (Exception e) {
-                    textoUsuarios.setText("Error al conectar con la API: " + e.getMessage());
+                    mostrarError(e, textoUsuarios);
                 }
             }
         }.execute();
@@ -206,21 +201,68 @@ public class ClienteGUI {
         }
 
         textoUsuarios.setText("Registrando usuario...");
-        new SwingWorker<Usuario, Void>() {
+
+        new SwingWorker<String, Void>() {
             @Override
-            protected Usuario doInBackground() {
-                return servicio.signUp(new Usuario(nombre, pass));
+            protected String doInBackground() {
+                Mono<String> mono = servicio.signUp(new Usuario(nombre, pass));
+                return mono.block();
             }
 
             @Override
             protected void done() {
                 try {
-                    Usuario u = get();
-                    textoUsuarios.setText(u != null ? "Registro correcto: " + u.getNombre() : "Registro fallido");
+                    String mensaje = get();
+                    textoUsuarios.setText(mensaje);
                 } catch (Exception e) {
-                    textoUsuarios.setText("Error al conectar con la API: " + e.getMessage());
+                    mostrarError(e, textoUsuarios);
                 }
             }
         }.execute();
+    }
+
+    // -------------------- Método para mostrar errores --------------------
+    private void mostrarError(Exception e, JTextArea area) {
+        if (e.getCause() instanceof WebClientResponseException ex) {
+            area.setText("Error en la petición: " + ex.getStatusCode() + " - " + ex.getResponseBodyAsString());
+        } else if (e.getCause() instanceof WebClientRequestException) {
+            area.setText("No se pudo conectar con la API. ¿Está arrancada?");
+        } else {
+            area.setText("Error inesperado: " + e.getMessage());
+        }
+    }
+
+
+    // -------------------- Método común para mostrar APK en la GUI --------------------
+    private void mostrarAPK(APK apk) throws Exception {
+        if (apk != null) {
+            textoAPK.setText(apk.toString());
+
+            if (apk.getImage() != null && apk.getImage().startsWith("data:image")) {
+                String base64 = apk.getImage().split(",")[1];
+                byte[] bytes = java.util.Base64.getDecoder().decode(base64);
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
+
+                int maxWidth = 400;
+                int maxHeight = 200;
+                int width = img.getWidth();
+                int height = img.getHeight();
+                if (width > maxWidth || height > maxHeight) {
+                    double scale = Math.min((double) maxWidth / width, (double) maxHeight / height);
+                    width = (int) (width * scale);
+                    height = (int) (height * scale);
+                    Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                    lblImagen.setIcon(new ImageIcon(scaled));
+                } else {
+                    lblImagen.setIcon(new ImageIcon(img));
+                }
+            } else {
+                lblImagen.setIcon(null);
+            }
+
+        } else {
+            textoAPK.setText("No se encontró la APK");
+            lblImagen.setIcon(null);
+        }
     }
 }
