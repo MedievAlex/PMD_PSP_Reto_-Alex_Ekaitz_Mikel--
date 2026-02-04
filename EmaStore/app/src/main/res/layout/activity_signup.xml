@@ -145,11 +145,11 @@
             android:background="@drawable/bg_box"
             android:orientation="vertical" >
 
-            <TextView
-                android:id="@+id/textView2"
+            <Button
+                android:id="@+id/button2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/username" />
+                android:text="@string/mute_audio" />
         </LinearLayout>
     </LinearLayout>
 

@@ -10,4 +10,6 @@
     <string name="download">DESCARGAR</string>
     <string name="title">TITULO</string>
     <string name="username">NOMBRE DE USUARIO</string>
+    <string name="mute_audio">SILENCIAR</string>
+    <string name="unmute_audio">DESILENCIAR</string>
 </resources>

@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/login"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="12dp"
-    android:id="@+id/login">
+    android:padding="12dp">
 
     <LinearLayout
+        android:id="@+id/header"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:orientation="vertical"
         android:background="@drawable/bg_box"
+        android:orientation="vertical"
         android:padding="8dp"
-        android:id="@+id/header"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:background="@drawable/bg_box"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/title_login"
@@ -40,27 +40,27 @@
                 android:id="@+id/btnExit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/exit"
-                android:textSize="16sp"
                 android:layout_marginEnd="16dp"
+                android:minHeight="40dp"
                 android:paddingHorizontal="16dp"
-                android:minHeight="40dp"/>
+                android:text="@string/exit"
+                android:textSize="16sp" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="match_parent"
             android:id="@+id/login_div"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
 
             <LinearLayout
+                android:id="@+id/username_div"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/username_div"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="20dp"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:layout_width="48dp"
@@ -68,7 +68,7 @@
                     android:background="@drawable/bg_circle"
                     android:gravity="center"
                     android:text="U"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <EditText
                     android:id="@+id/etUser"
@@ -77,14 +77,15 @@
                     android:layout_marginStart="16dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_box"
-                    android:padding="8dp"/>
+                    android:padding="8dp" />
             </LinearLayout>
+
             <LinearLayout
+                android:id="@+id/password_div"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/password_div"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="30dp">
+                android:layout_marginBottom="30dp"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:layout_width="48dp"
@@ -92,7 +93,7 @@
                     android:background="@drawable/bg_circle"
                     android:gravity="center"
                     android:text="P"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <EditText
                     android:id="@+id/etPassword"
@@ -101,8 +102,8 @@
                     android:layout_marginStart="16dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_box"
-                    android:padding="8dp"
-                    android:inputType="textPassword"/>
+                    android:inputType="textPassword"
+                    android:padding="8dp" />
             </LinearLayout>
 
             <Button
@@ -132,11 +133,11 @@
             android:background="@drawable/bg_box"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textView"
+            <Button
+                android:id="@+id/button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/username" />
+                android:text="@string/mute_audio" />
         </LinearLayout>
 
     </LinearLayout>

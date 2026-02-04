@@ -11,4 +11,6 @@
     <string name="download">DOWNLOAD</string>
     <string name="title">TITLE</string>
     <string name="username">USERNAME</string>
+    <string name="mute_audio">MUTE</string>
+    <string name="unmute_audio">UNMUTE</string>
 </resources>
