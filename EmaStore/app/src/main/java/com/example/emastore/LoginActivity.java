@@ -32,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
         Button btnLogin = findViewById(R.id.btnLogin);
         Button btnSignUp = findViewById(R.id.btnSignup);
         Button btnExit = findViewById(R.id.btnExit);
+        Button btnAudio = findViewById(R.id.bttnAudio);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,7 +67,16 @@ public class LoginActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        btnAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(btnAudio.getText().equals(R.string.mute_audio)) {
+                    btnAudio.setText(R.string.unmute_audio);
+                } else if(btnAudio.getText().equals(R.string.unmute_audio)) {
+                    btnAudio.setText(R.string.mute_audio);
+                }
+            }
+        });
     }
-
-
 }

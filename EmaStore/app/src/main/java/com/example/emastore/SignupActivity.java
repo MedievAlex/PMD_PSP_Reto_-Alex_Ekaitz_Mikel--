@@ -43,6 +43,7 @@ public class SignupActivity extends AppCompatActivity {
         Button btnLogin = findViewById(R.id.btnLogin);
         Button btnExit = findViewById(R.id.btnExit);
         etUser = findViewById(R.id.etUser);
+        Button btnAudio = findViewById(R.id.bttnAudio);
 
         btnTogglePass.setOnClickListener(new View.OnClickListener() {
             @Override

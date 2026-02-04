@@ -19,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Button btnAudio = findViewById(R.id.bttnAudio);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
