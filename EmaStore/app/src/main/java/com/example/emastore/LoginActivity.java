@@ -1,6 +1,7 @@
 package com.example.emastore;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
@@ -95,11 +96,14 @@ public class LoginActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(btnAudio.getText().equals(getString(R.string.mute_audio))) {
                     btnAudio.setText(R.string.unmute_audio);
-                } else if(btnAudio.getText().equals(getString(R.string.unmute_audio))) {
+                    audioPlayer(false);
+                } else if(btnAudio.getText().equals(R.string.unmute_audio)) {
                     btnAudio.setText(R.string.mute_audio);
+                    audioPlayer(true);
                 }
             }
         });
+        audioPlayer(true);
     }
 
     private void togglePasswordVisibility() {
@@ -113,4 +117,13 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setSelection(etPassword.getText().length());
         isPasswordVisible = !isPasswordVisible;
     }
+        private void audioPlayer(boolean isPlaying){
+            MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
+
+            if(isPlaying) {
+                mediaPlayer.start();
+            } else {
+                mediaPlayer.pause();
+            }
+        }
 }
