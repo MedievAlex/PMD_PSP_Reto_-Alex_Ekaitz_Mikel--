@@ -8,4 +8,5 @@
     <string name="exit">SALIR</string>
     <string name="back">ATRAS</string>
     <string name="download">DESCARGAR</string>
+    <string name="title">TITULO</string>
 </resources>
