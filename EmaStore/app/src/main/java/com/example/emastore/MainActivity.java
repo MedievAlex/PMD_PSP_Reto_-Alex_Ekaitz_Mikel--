@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                     case 2:
                         // startActivity(new Intent(MainActivity.this, Opcion2Activity.class));
                         break;
-                    // ... etc
+
                 }
             }
         });
