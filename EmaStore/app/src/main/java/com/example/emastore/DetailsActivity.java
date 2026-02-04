@@ -43,6 +43,16 @@ public class DetailsActivity extends AppCompatActivity {
                 startActivity(new Intent(DetailsActivity.this, MainActivity.class));
             }
         });
+        btnAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(btnAudio.getText().equals(R.string.mute_audio)) {
+                    btnAudio.setText(R.string.unmute_audio);
+                } else if(btnAudio.getText().equals(R.string.unmute_audio)) {
+                    btnAudio.setText(R.string.mute_audio);
+                }
+            }
+        });
     }
 
 }

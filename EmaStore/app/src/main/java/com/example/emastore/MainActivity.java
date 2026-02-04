@@ -27,6 +27,17 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupButtons();
+
+        btnAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(btnAudio.getText().equals(R.string.mute_audio)) {
+                    btnAudio.setText(R.string.unmute_audio);
+                } else if(btnAudio.getText().equals(R.string.unmute_audio)) {
+                    btnAudio.setText(R.string.mute_audio);
+                }
+            }
+        });
     }
 
     private void initViews() {
