@@ -3,8 +3,12 @@ package com.example.emastore;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,45 +18,62 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 
 import model.User;
-    //RetroFit para la conexion con psp
+
 public class LoginActivity extends AppCompatActivity {
     private final ArrayList<User> usuarios = new ArrayList<User>();
+    private boolean isPasswordVisible = false;
+    private ImageButton btnTogglePass;
+    private EditText etPassword;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
-        //startService(new Intent(this, AudioService.class));
+
         usuarios.add(new User("admin", "1234"));
         usuarios.add(new User("usuario1", "password1"));
-        /*ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });*/
+
         Button btnLogin = findViewById(R.id.btnLogin);
         Button btnSignUp = findViewById(R.id.btnSignup);
         Button btnExit = findViewById(R.id.btnExit);
         Button btnAudio = findViewById(R.id.bttnAudio);
+        btnTogglePass = findViewById(R.id.btnTogglePass);
+        etPassword = findViewById(R.id.etPassword);
+
+        btnTogglePass.setImageResource(R.drawable.ic_visibility_off);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                TextView usuario = findViewById(R.id.etUser);
-                TextView password = findViewById(R.id.etPassword);
-                String user = usuario.getText().toString();
-                String pass = password.getText().toString();
-                for (User u : usuarios) {
-                    if (u.getUsername().equals(user) && u.getPassword().equals(pass)) {
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        finish();
-                        return;
+                try {
+                    EditText etUser = findViewById(R.id.etUser);
+                    String user = etUser.getText().toString();
+                    String pass = etPassword.getText().toString();
+
+                    for (User u : usuarios) {
+                        if (u.getUsername().equals(user) && u.getPassword().equals(pass)) {
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
+                            finish();
+                            return;
+                        }
                     }
-                }
                     Toast.makeText(LoginActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
-                    usuario.setText("");
-                    password.setText("");
-                    usuario.requestFocus();
+                    etUser.setText("");
+                    etPassword.setText("");
+                    etUser.requestFocus();
+                } catch (Exception e) {
+                    Toast.makeText(LoginActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        btnTogglePass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePasswordVisibility();
             }
         });
 
@@ -62,25 +83,39 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
             }
         });
+
         btnExit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
             }
         });
+
         btnAudio.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(btnAudio.getText().equals(R.string.mute_audio)) {
+                if(btnAudio.getText().equals(getString(R.string.mute_audio))) {
                     btnAudio.setText(R.string.unmute_audio);
-                    audioPlayer(true);
+                    audioPlayer(false);
                 } else if(btnAudio.getText().equals(R.string.unmute_audio)) {
                     btnAudio.setText(R.string.mute_audio);
-                    audioPlayer(false);
+                    audioPlayer(true);
                 }
             }
         });
         audioPlayer(true);
+    }
+
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            etPassword.setTransformationMethod(PasswordTransformationMethod.getInstance());
+            btnTogglePass.setImageResource(R.drawable.ic_visibility_off);
+        } else {
+            etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+            btnTogglePass.setImageResource(R.drawable.ic_visibility);
+        }
+        etPassword.setSelection(etPassword.getText().length());
+        isPasswordVisible = !isPasswordVisible;
     }
         private void audioPlayer(boolean isPlaying){
             MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
