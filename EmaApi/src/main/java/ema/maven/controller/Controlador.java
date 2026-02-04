@@ -105,7 +105,7 @@ public class Controlador {
 	@PostMapping("/apk")
 	public ResponseEntity<?> addAPK(@RequestBody APK apk) {
 	    if (apk == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
-	        return ResponseEntity.badRequest().body("El título de la APK es obligatorio");
+	        return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 	    }
 	    
 	    try {
@@ -124,7 +124,7 @@ public class Controlador {
 	@PutMapping("/apk/{titulo}")
 	public ResponseEntity<?> updateAPK(@PathVariable String titulo, @RequestBody APK apk) {
 		if (titulo == null || titulo.trim().isEmpty()) {
-			return ResponseEntity.badRequest().body("El título en la URL no puede estar vacío");
+			return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 		}
 		
 		if (apk == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {

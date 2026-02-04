@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -31,15 +32,14 @@ public class ClienteGUI {
     private JFrame frame;
     private final Servicio servicio;
     
- // Panel Usuarios
+    // Panel Usuarios
     private JTextField txtNombre;
     private JPasswordField txtPassword;
     private JTextArea textoUsuarios;
 
     // Panel APKs - Buscar y Listar
     private JTextField txtTitulo;
-    private JTextArea textoAPK;
-    private JLabel lblImagen;
+    private JPanel panelTarjetas;
 
     // Panel Crear APK
     private JTextField txtNuevoTitulo;
@@ -47,7 +47,6 @@ public class ClienteGUI {
     private JTextField txtNuevaDescripcion;
     private JTextField txtNuevaImagenPath;
     private String imagenBase64Nueva = "";
-    private JTextArea textoCrearAPK;
 
     // Panel Actualizar APK
     private JTextField txtActualizarTitulo;
@@ -55,13 +54,13 @@ public class ClienteGUI {
     private JTextField txtActualizarDescripcion;
     private JTextField txtActualizarImagenPath;
     private String imagenBase64Actualizar = "";
-    private JTextArea textoActualizarAPK;
+    private String tituloOriginalActualizar = "";
 
     // Panel Eliminar APK
     private JTextField txtEliminarTitulo;
     private JTextArea textoEliminarAPK;
     
- // Panel Descargar
+    // Panel Descargar
     private JTextField txtDescargarTitulo;
     private JTextArea textoDescargar;
 
@@ -154,21 +153,72 @@ public class ClienteGUI {
         topPanel.add(btnBuscar);
         topPanel.add(btnListar);
 
-        textoAPK = new JTextArea();
-        textoAPK.setEditable(false);
-        JScrollPane scrollAPK = new JScrollPane(textoAPK);
-
-        lblImagen = new JLabel();
-        lblImagen.setHorizontalAlignment(JLabel.CENTER);
+        panelTarjetas = new JPanel();
+        panelTarjetas.setLayout(new BoxLayout(panelTarjetas, BoxLayout.Y_AXIS));
+        
+        JScrollPane scrollTarjetas = new JScrollPane(panelTarjetas);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(scrollAPK, BorderLayout.CENTER);
-        panel.add(lblImagen, BorderLayout.SOUTH);
+        panel.add(scrollTarjetas, BorderLayout.CENTER);
 
         btnBuscar.addActionListener(e -> buscarAPK());
         btnListar.addActionListener(e -> listarTodasAPKs());
 
         return panel;
+    }
+
+    // ==================== CREAR TARJETA DE APK ====================
+    private JPanel crearTarjetaAPK(APK apk) {
+        JPanel tarjeta = new JPanel(new BorderLayout(10, 10));
+        tarjeta.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createEtchedBorder(), 
+            apk.getTitulo() != null ? apk.getTitulo() : "Sin título",
+            TitledBorder.LEFT,
+            TitledBorder.TOP
+        ));
+        tarjeta.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        
+        // Imagen
+        JLabel lblImagenTarjeta = new JLabel();
+        lblImagenTarjeta.setPreferredSize(new Dimension(100, 100));
+        lblImagenTarjeta.setHorizontalAlignment(JLabel.CENTER);
+        lblImagenTarjeta.setBorder(BorderFactory.createEtchedBorder());
+        
+        if (apk.getImage() != null && apk.getImage().startsWith("data:image")) {
+            try {
+                String base64 = apk.getImage().split(",")[1];
+                byte[] bytes = Base64.getDecoder().decode(base64);
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
+                Image scaled = img.getScaledInstance(90, 90, Image.SCALE_SMOOTH);
+                lblImagenTarjeta.setIcon(new ImageIcon(scaled));
+            } catch (Exception e) {
+                lblImagenTarjeta.setText("[Imagen]");
+            }
+        } else {
+            lblImagenTarjeta.setText("[Sin imagen]");
+        }
+        
+        // Información
+        JPanel panelInfo = new JPanel();
+        panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.Y_AXIS));
+        
+        JLabel lblAutor = new JLabel("Autor: " + (apk.getAutor() != null && !apk.getAutor().isEmpty() ? apk.getAutor() : "Desconocido"));
+        
+        JTextArea txtDescripcion = new JTextArea(3, 40);
+        txtDescripcion.setText(apk.getDescripcion() != null ? apk.getDescripcion() : "Sin descripción");
+        txtDescripcion.setLineWrap(true);
+        txtDescripcion.setWrapStyleWord(true);
+        txtDescripcion.setEditable(false);
+        txtDescripcion.setOpaque(false);
+        
+        panelInfo.add(lblAutor);
+        panelInfo.add(Box.createVerticalStrut(5));
+        panelInfo.add(txtDescripcion);
+
+        tarjeta.add(lblImagenTarjeta, BorderLayout.WEST);
+        tarjeta.add(panelInfo, BorderLayout.CENTER);
+
+        return tarjeta;
     }
 
     // ==================== PANEL 3: Crear APK ====================
@@ -198,14 +248,15 @@ public class ClienteGUI {
         formPanel.add(btnSeleccionarImagen);
         formPanel.add(btnCrear);
 
-        textoCrearAPK = new JTextArea();
-        textoCrearAPK.setEditable(false);
+        JPanel panelResultado = new JPanel();
+        panelResultado.setLayout(new BoxLayout(panelResultado, BoxLayout.Y_AXIS));
+        JScrollPane scrollResultado = new JScrollPane(panelResultado);
 
         panel.add(formPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(textoCrearAPK), BorderLayout.CENTER);
+        panel.add(scrollResultado, BorderLayout.CENTER);
 
         btnSeleccionarImagen.addActionListener(e -> seleccionarImagenNueva());
-        btnCrear.addActionListener(e -> crearAPK());
+        btnCrear.addActionListener(e -> crearAPK(panelResultado));
 
         return panel;
     }
@@ -214,20 +265,25 @@ public class ClienteGUI {
     private JPanel crearPanelActualizarAPK() {
         JPanel panel = new JPanel(new BorderLayout());
         
-        JPanel formPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+        JPanel formPanel = new JPanel(new GridLayout(8, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
+        JTextField txtBuscarAPK = new JTextField(20);
         txtActualizarTitulo = new JTextField(20);
         txtActualizarAutor = new JTextField(20);
         txtActualizarDescripcion = new JTextField(20);
         txtActualizarImagenPath = new JTextField(20);
         txtActualizarImagenPath.setEditable(false);
         
-        JButton btnCargar = new JButton("Cargar APK existente");
+        JButton btnCargar = new JButton("Cargar APK");
         JButton btnSeleccionarImagen = new JButton("Cambiar imagen");
         JButton btnActualizar = new JButton("Actualizar APK");
         
-        formPanel.add(new JLabel("Título actual:"));
+        formPanel.add(new JLabel("Buscar APK (título actual):"));
+        formPanel.add(txtBuscarAPK);
+        formPanel.add(new JLabel(""));
+        formPanel.add(btnCargar);
+        formPanel.add(new JLabel("Nuevo Título:"));
         formPanel.add(txtActualizarTitulo);
         formPanel.add(new JLabel("Nuevo Autor:"));
         formPanel.add(txtActualizarAutor);
@@ -235,20 +291,19 @@ public class ClienteGUI {
         formPanel.add(txtActualizarDescripcion);
         formPanel.add(new JLabel("Nueva Imagen:"));
         formPanel.add(txtActualizarImagenPath);
-        formPanel.add(btnCargar);
         formPanel.add(btnSeleccionarImagen);
-        formPanel.add(new JLabel(""));
         formPanel.add(btnActualizar);
 
-        textoActualizarAPK = new JTextArea();
-        textoActualizarAPK.setEditable(false);
+        JPanel panelResultado = new JPanel();
+        panelResultado.setLayout(new BoxLayout(panelResultado, BoxLayout.Y_AXIS));
+        JScrollPane scrollResultado = new JScrollPane(panelResultado);
 
         panel.add(formPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(textoActualizarAPK), BorderLayout.CENTER);
+        panel.add(scrollResultado, BorderLayout.CENTER);
 
-        btnCargar.addActionListener(e -> cargarAPKParaActualizar());
+        btnCargar.addActionListener(e -> cargarAPKParaActualizar(txtBuscarAPK.getText().trim(), panelResultado));
         btnSeleccionarImagen.addActionListener(e -> seleccionarImagenActualizar());
-        btnActualizar.addActionListener(e -> actualizarAPK());
+        btnActualizar.addActionListener(e -> actualizarAPK(panelResultado));
 
         return panel;
     }
@@ -364,7 +419,6 @@ public class ClienteGUI {
                 String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
                 imagenBase64Nueva = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
                 txtNuevaImagenPath.setText(selectedFile.getName());
-                textoCrearAPK.setText("Imagen seleccionada: " + selectedFile.getName());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
             }
@@ -387,7 +441,6 @@ public class ClienteGUI {
                 String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
                 imagenBase64Actualizar = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
                 txtActualizarImagenPath.setText(selectedFile.getName());
-                textoActualizarAPK.setText("Imagen seleccionada: " + selectedFile.getName());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
             }
@@ -479,11 +532,9 @@ public class ClienteGUI {
             
             @Override
             protected String doInBackground() throws Exception {
-                // Calcular hash del servidor
                 Mono<String> mono = servicio.getHash(titulo, algoritmo);
                 hashServidor = mono.block();
                 
-                // Calcular hash local
                 File archivo = new File(rutaArchivo);
                 MessageDigest digest = MessageDigest.getInstance(algoritmo);
                 
@@ -598,8 +649,11 @@ public class ClienteGUI {
             return;
         }
 
-        textoAPK.setText("Buscando APK...");
-        lblImagen.setIcon(null);
+        panelTarjetas.removeAll();
+        JLabel lblCargando = new JLabel("Buscando APK...", JLabel.CENTER);
+        panelTarjetas.add(lblCargando);
+        panelTarjetas.revalidate();
+        panelTarjetas.repaint();
 
         new SwingWorker<APK, Void>() {
             @Override
@@ -612,17 +666,25 @@ public class ClienteGUI {
             protected void done() {
                 try {
                     APK apk = get();
-                    mostrarAPK(apk);
+                    mostrarTarjetas(apk != null ? List.of(apk) : List.of());
                 } catch (Exception e) {
-                    mostrarError(e, textoAPK);
+                    panelTarjetas.removeAll();
+                    JTextArea error = new JTextArea(obtenerMensajeError(e));
+                    error.setEditable(false);
+                    panelTarjetas.add(error);
+                    panelTarjetas.revalidate();
+                    panelTarjetas.repaint();
                 }
             }
         }.execute();
     }
 
     private void listarTodasAPKs() {
-        textoAPK.setText("Cargando todas las APKs...");
-        lblImagen.setIcon(null);
+        panelTarjetas.removeAll();
+        JLabel lblCargando = new JLabel("Cargando todas las APKs...", JLabel.CENTER);
+        panelTarjetas.add(lblCargando);
+        panelTarjetas.revalidate();
+        panelTarjetas.repaint();
 
         new SwingWorker<List<APK>, Void>() {
             @Override
@@ -635,26 +697,48 @@ public class ClienteGUI {
             protected void done() {
                 try {
                     List<APK> lista = get();
-                    StringBuilder sb = new StringBuilder();
-                    for (APK apk : lista) {
-                        sb.append(apk.toString()).append("\n\n");
-                    }
-                    textoAPK.setText(sb.toString());
+                    mostrarTarjetas(lista);
                 } catch (Exception e) {
-                    mostrarError(e, textoAPK);
+                    panelTarjetas.removeAll();
+                    JTextArea error = new JTextArea(obtenerMensajeError(e));
+                    error.setEditable(false);
+                    panelTarjetas.add(error);
+                    panelTarjetas.revalidate();
+                    panelTarjetas.repaint();
                 }
             }
         }.execute();
     }
 
-    private void crearAPK() {
+    private void mostrarTarjetas(List<APK> listaAPKs) {
+        panelTarjetas.removeAll();
+        
+        if (listaAPKs == null || listaAPKs.isEmpty()) {
+            JLabel lblVacio = new JLabel("No se encontraron APKs", JLabel.CENTER);
+            panelTarjetas.add(lblVacio);
+        } else {
+            for (APK apk : listaAPKs) {
+                panelTarjetas.add(crearTarjetaAPK(apk));
+                panelTarjetas.add(Box.createVerticalStrut(10));
+            }
+        }
+        
+        panelTarjetas.revalidate();
+        panelTarjetas.repaint();
+    }
+
+    private void crearAPK(JPanel panelResultado) {
         String titulo = txtNuevoTitulo.getText().trim();
         if (titulo.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "El título es obligatorio");
             return;
         }
 
-        textoCrearAPK.setText("Creando APK...");
+        panelResultado.removeAll();
+        JLabel lblCargando = new JLabel("Creando APK...", JLabel.CENTER);
+        panelResultado.add(lblCargando);
+        panelResultado.revalidate();
+        panelResultado.repaint();
 
         new SwingWorker<APK, Void>() {
             @Override
@@ -673,23 +757,39 @@ public class ClienteGUI {
             protected void done() {
                 try {
                     APK apk = get();
-                    textoCrearAPK.setText("APK creada correctamente:\n" + apk.toString());
+                    panelResultado.removeAll();
+                    
+                    JLabel lblExito = new JLabel("APK creada correctamente:", JLabel.CENTER);
+                    lblExito.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                    panelResultado.add(lblExito);
+                    panelResultado.add(crearTarjetaAPK(apk));
+                    
+                    panelResultado.revalidate();
+                    panelResultado.repaint();
                     limpiarCamposCrear();
                 } catch (Exception e) {
-                    mostrarError(e, textoCrearAPK);
+                    panelResultado.removeAll();
+                    JTextArea error = new JTextArea(obtenerMensajeError(e));
+                    error.setEditable(false);
+                    panelResultado.add(error);
+                    panelResultado.revalidate();
+                    panelResultado.repaint();
                 }
             }
         }.execute();
     }
 
-    private void cargarAPKParaActualizar() {
-        String titulo = txtActualizarTitulo.getText().trim();
+    private void cargarAPKParaActualizar(String titulo, JPanel panelResultado) {
         if (titulo.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Introduce el título de la APK a actualizar");
             return;
         }
 
-        textoActualizarAPK.setText("Cargando APK...");
+        panelResultado.removeAll();
+        JLabel lblCargando = new JLabel("Cargando APK...", JLabel.CENTER);
+        panelResultado.add(lblCargando);
+        panelResultado.revalidate();
+        panelResultado.repaint();
 
         new SwingWorker<APK, Void>() {
             @Override
@@ -703,38 +803,62 @@ public class ClienteGUI {
                 try {
                     APK apk = get();
                     if (apk != null) {
+                        tituloOriginalActualizar = apk.getTitulo();
+                        
+                        txtActualizarTitulo.setText(apk.getTitulo() != null ? apk.getTitulo() : "");
                         txtActualizarAutor.setText(apk.getAutor() != null ? apk.getAutor() : "");
                         txtActualizarDescripcion.setText(apk.getDescripcion() != null ? apk.getDescripcion() : "");
                         imagenBase64Actualizar = apk.getImage() != null ? apk.getImage() : "";
                         txtActualizarImagenPath.setText(imagenBase64Actualizar.isEmpty() ? "" : "Imagen actual");
-                        textoActualizarAPK.setText("APK cargada. Modifica los campos y pulsa 'Actualizar APK'");
+                        
+                        panelResultado.removeAll();
+                        JLabel lblInfo = new JLabel("APK cargada. Modifica los campos y pulsa 'Actualizar APK':", JLabel.CENTER);
+                        lblInfo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                        panelResultado.add(lblInfo);
+                        panelResultado.add(crearTarjetaAPK(apk));
+                        panelResultado.revalidate();
+                        panelResultado.repaint();
                     }
                 } catch (Exception e) {
-                    mostrarError(e, textoActualizarAPK);
+                    panelResultado.removeAll();
+                    JTextArea error = new JTextArea(obtenerMensajeError(e));
+                    error.setEditable(false);
+                    panelResultado.add(error);
+                    panelResultado.revalidate();
+                    panelResultado.repaint();
                 }
             }
         }.execute();
     }
 
-    private void actualizarAPK() {
-        String titulo = txtActualizarTitulo.getText().trim();
-        if (titulo.isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "El título es obligatorio");
+    private void actualizarAPK(JPanel panelResultado) {
+        if (tituloOriginalActualizar.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Primero debes cargar una APK existente");
             return;
         }
 
-        textoActualizarAPK.setText("Actualizando APK...");
+        String nuevoTitulo = txtActualizarTitulo.getText().trim();
+        if (nuevoTitulo.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "El título no puede estar vacío");
+            return;
+        }
+
+        panelResultado.removeAll();
+        JLabel lblCargando = new JLabel("Actualizando APK...", JLabel.CENTER);
+        panelResultado.add(lblCargando);
+        panelResultado.revalidate();
+        panelResultado.repaint();
 
         new SwingWorker<APK, Void>() {
             @Override
             protected APK doInBackground() {
                 APK apk = new APK();
-                apk.setTitulo(titulo);
+                apk.setTitulo(nuevoTitulo);
                 apk.setAutor(txtActualizarAutor.getText().trim());
                 apk.setDescripcion(txtActualizarDescripcion.getText().trim());
                 apk.setImage(imagenBase64Actualizar);
 
-                Mono<APK> mono = servicio.updateAPK(titulo, apk);
+                Mono<APK> mono = servicio.updateAPK(tituloOriginalActualizar, apk);
                 return mono.block();
             }
 
@@ -742,10 +866,23 @@ public class ClienteGUI {
             protected void done() {
                 try {
                     APK apk = get();
-                    textoActualizarAPK.setText("APK actualizada correctamente:\n" + apk.toString());
+                    panelResultado.removeAll();
+                    
+                    JLabel lblExito = new JLabel("APK actualizada correctamente:", JLabel.CENTER);
+                    lblExito.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                    panelResultado.add(lblExito);
+                    panelResultado.add(crearTarjetaAPK(apk));
+                    
+                    panelResultado.revalidate();
+                    panelResultado.repaint();
                     limpiarCamposActualizar();
                 } catch (Exception e) {
-                    mostrarError(e, textoActualizarAPK);
+                    panelResultado.removeAll();
+                    JTextArea error = new JTextArea(obtenerMensajeError(e));
+                    error.setEditable(false);
+                    panelResultado.add(error);
+                    panelResultado.revalidate();
+                    panelResultado.repaint();
                 }
             }
         }.execute();
@@ -870,44 +1007,17 @@ public class ClienteGUI {
 
     // ==================== MÉTODOS AUXILIARES ====================
 
-    private void mostrarAPK(APK apk) throws Exception {
-        if (apk != null) {
-            textoAPK.setText(apk.toString());
-
-            if (apk.getImage() != null && apk.getImage().startsWith("data:image")) {
-                String base64 = apk.getImage().split(",")[1];
-                byte[] bytes = java.util.Base64.getDecoder().decode(base64);
-                BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-
-                int maxWidth = 400;
-                int maxHeight = 200;
-                int width = img.getWidth();
-                int height = img.getHeight();
-                if (width > maxWidth || height > maxHeight) {
-                    double scale = Math.min((double) maxWidth / width, (double) maxHeight / height);
-                    width = (int) (width * scale);
-                    height = (int) (height * scale);
-                    Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                    lblImagen.setIcon(new ImageIcon(scaled));
-                } else {
-                    lblImagen.setIcon(new ImageIcon(img));
-                }
-            } else {
-                lblImagen.setIcon(null);
-            }
-        } else {
-            textoAPK.setText("No se encontró la APK");
-            lblImagen.setIcon(null);
-        }
+    private void mostrarError(Exception e, JTextArea area) {
+        area.setText(obtenerMensajeError(e));
     }
 
-    private void mostrarError(Exception e, JTextArea area) {
+    private String obtenerMensajeError(Exception e) {
         if (e.getCause() instanceof WebClientResponseException ex) {
-            area.setText("Error en la petición: " + ex.getStatusCode() + " - " + ex.getResponseBodyAsString());
+            return "Error en la petición: " + ex.getStatusCode() + " - " + ex.getResponseBodyAsString();
         } else if (e.getCause() instanceof WebClientRequestException) {
-            area.setText("No se pudo conectar con la API. ¿Está arrancada?");
+            return "No se pudo conectar con la API.";
         } else {
-            area.setText("Error inesperado: " + e.getMessage());
+            return "Error inesperado: " + e.getMessage();
         }
     }
 
@@ -925,5 +1035,6 @@ public class ClienteGUI {
         txtActualizarDescripcion.setText("");
         txtActualizarImagenPath.setText("");
         imagenBase64Actualizar = "";
+        tituloOriginalActualizar = "";
     }
 }
