@@ -94,16 +94,32 @@
                     android:gravity="center"
                     android:text="P"
                     android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etPassword"
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_marginStart="16dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_box"
-                    android:inputType="textPassword"
-                    android:padding="8dp" />
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_box">
+
+                    <EditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:padding="8dp"
+                        android:inputType="textPassword"/>
+
+                    <ImageButton
+                        android:id="@+id/btnTogglePass"
+                        android:layout_width="48dp"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:src="@drawable/ic_visibility_off"
+                        android:scaleType="center"
+                        android:contentDescription="Mostrar/ocultar contraseña"/>
+                </LinearLayout>
             </LinearLayout>
 
             <Button
