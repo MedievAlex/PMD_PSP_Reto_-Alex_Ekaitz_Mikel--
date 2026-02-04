@@ -61,9 +61,18 @@
             android:padding="8dp"
             tools:listitem="@layout/item_menu"/>
 
-        <View
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp"/>
+            android:layout_height="60dp"
+            android:background="@drawable/bg_box">
+
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/username" />
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -10,4 +10,5 @@
     <string name="back">BACK</string>
     <string name="download">DOWNLOAD</string>
     <string name="title">TITLE</string>
+    <string name="username">USERNAME</string>
 </resources>

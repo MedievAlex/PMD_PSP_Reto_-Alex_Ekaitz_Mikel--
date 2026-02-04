@@ -9,4 +9,5 @@
     <string name="back">ATRAS</string>
     <string name="download">DESCARGAR</string>
     <string name="title">TITULO</string>
+    <string name="username">NOMBRE DE USUARIO</string>
 </resources>
