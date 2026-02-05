@@ -3,6 +3,7 @@ package ema.maven.controller;
 import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,152 +33,167 @@ public class Controlador {
 	@PostMapping("/login")
 	public ResponseEntity<String> login(@RequestBody Usuario user) {
 		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.badRequest().body("Nombre y contraseña obligatorios");
 		}
 		
 		try {
 		    Usuario u = servicio.login(user);
 		    
 		    if (u == null) {
-		    	return ResponseEntity.status(401).build();
+		    	return ResponseEntity.status(401).body("Usuario o contraseña incorrectos");
 		    }
 		    
 		    return ResponseEntity.ok(u.getNombre());
 		} catch (ResponseStatusException e) {
-			return ResponseEntity.internalServerError().build();
+			return ResponseEntity.internalServerError().body("Error interno en el servidor");
 		}
 	}
 
 	@PostMapping("/register")
 	public ResponseEntity<String> signUp(@RequestBody Usuario user) {
 		if (user == null || user.getNombre() == null || user.getContraseña() == null) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.badRequest().body("Nombre y contraseña obligatorios");
 		}
 		
 		try {
 		    Usuario u = servicio.signUp(user);
 		    
 		    if (u == null) {
-		    	return ResponseEntity.status(409).build();
+		    	return ResponseEntity.status(409).body("El usuario ya existe");
 		    }
 		    
-		    return ResponseEntity.status(201).body(u.getNombre());
+		    return ResponseEntity.status(201).body("Usuario registrado: " + u.getNombre());
 		} catch (ResponseStatusException e) {
-			return ResponseEntity.internalServerError().build();
+			return ResponseEntity.internalServerError().body("Error interno en el servidor");
 		}
 	}
 	
 	@GetMapping("/apks")
-	public ResponseEntity<ArrayList<APK>> getApks() {
-		ArrayList<APK> apks = servicio.getAPKs();
-		
-		return ResponseEntity.ok().body(apks);
+	public ResponseEntity<?> getApks() {
+		try {
+			ArrayList<APK> apks = servicio.getAPKs();
+			
+			if (apks == null || apks.isEmpty()) {
+				return ResponseEntity.ok().body("No hay APKs disponibles");
+			}
+			
+			return ResponseEntity.ok().body(apks);
+		} catch (ResponseStatusException e) {
+			return ResponseEntity.internalServerError().body("Error interno al obtener las APKs");
+		}
 	}
 	
 	@GetMapping("/apk/{titulo}")
-	public ResponseEntity<APK> getAPK(@PathVariable String titulo) {
+	public ResponseEntity<?> getAPK(@PathVariable String titulo) {
 		if (titulo == null || titulo.trim().isEmpty()) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 		}
 		
 		try {
 		    APK apk = servicio.getAPK(titulo);
 		    
 		    if (apk == null) {
-		    	return ResponseEntity.notFound().build();
+		    	return ResponseEntity.status(404).body("No se encontró la APK con título: " + titulo);
 		    }
 		    
 		    return ResponseEntity.ok(apk);
 		} catch (ResponseStatusException e) {
-			return ResponseEntity.internalServerError().build();
+			return ResponseEntity.internalServerError().body("Error interno al buscar la APK");
 		}
 	}
 	
 	@PostMapping("/apk")
-	public ResponseEntity<APK> addAPK(@RequestBody APK apk) {
-	    if (apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
-	        return ResponseEntity.badRequest().build();
+	public ResponseEntity<?> addAPK(@RequestBody APK apk) {
+	    if (apk == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
+	        return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 	    }
 	    
 	    try {
 		    APK creada = servicio.addAPK(apk);
 		    
 		    if (creada == null) {
-		    	return ResponseEntity.status(409).build();
+		    	return ResponseEntity.status(409).body("Ya existe una APK con el título: " + apk.getTitulo());
 		    }
 		    
 		    return ResponseEntity.status(201).body(creada);
 	    } catch (ResponseStatusException e) {
-			return ResponseEntity.internalServerError().build();
+			return ResponseEntity.internalServerError().body("Error interno al crear la APK");
 		}
 	}
 	
 	@PutMapping("/apk/{titulo}")
-	public ResponseEntity<APK> updateAPK(@PathVariable String titulo, @RequestBody APK apk) {
-		if (titulo == null || titulo.trim().isEmpty() || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
-			return ResponseEntity.badRequest().build();
+	public ResponseEntity<?> updateAPK(@PathVariable String titulo, @RequestBody APK apk) {
+		if (titulo == null || titulo.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
+		}
+		
+		if (apk == null || apk.getTitulo() == null || apk.getTitulo().trim().isEmpty()) {
+			return ResponseEntity.badRequest().body("El título de la APK en el cuerpo no puede estar vacío");
 		}
 		
 		try {
 		    APK actualizada = servicio.updateAPK(titulo, apk);
 		    
 		    if (actualizada == null) {
-		    	return ResponseEntity.notFound().build();
+		    	return ResponseEntity.status(404).body("No se encontró la APK con título: " + titulo);
 		    }
 		    
 		    return ResponseEntity.ok(actualizada);
 		} catch (ResponseStatusException e) {
 			if (e.getStatusCode() == HttpStatus.CONFLICT) {
-				return ResponseEntity.status(409).build();
+				return ResponseEntity.status(409).body("Conflicto al actualizar: el nuevo título ya existe");
 			} else {
-				return ResponseEntity.internalServerError().build();
+				return ResponseEntity.internalServerError().body("Error interno al actualizar la APK");
 			}
 		}
 	}
 
 	@DeleteMapping("/apk/{titulo}")
-	public ResponseEntity<Void> deleteAPK(@PathVariable String titulo) {
+	public ResponseEntity<String> deleteAPK(@PathVariable String titulo) {
 		if (titulo == null || titulo.trim().isEmpty()) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 		}
 		
 		try {
 		    servicio.deleteAPK(titulo);
 		    
-		    return ResponseEntity.noContent().build();
+		    return ResponseEntity.status(204).body("APK eliminada correctamente: " + titulo);
 		} catch (ResponseStatusException e) {
 			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-				return ResponseEntity.notFound().build();
+				return ResponseEntity.status(404).body("No se encontró la APK con título: " + titulo);
 			} else {
-				return ResponseEntity.internalServerError().build();
+				return ResponseEntity.internalServerError().body("Error interno al eliminar la APK");
 			}
 		}
 	}
 	
 	@GetMapping("/download/{titulo}")
-	public ResponseEntity<Resource> downloadAPK(@PathVariable String titulo) {
-		if (titulo == null || titulo.trim().isEmpty()) {
-			return ResponseEntity.badRequest().build();
-		}
-		
-		try {
-			String apk = titulo + ".apk";
-	    	Resource resource = servicio.downloadAPK(apk);
-	        
-	        return ResponseEntity.ok().header("Content-Disposition", "attachment; filename=\"" + apk + "\"").body(resource); // Cabecera para que el navegador sepa que es una descarga
-		} catch (ResponseStatusException e) {
-			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-				return ResponseEntity.notFound().build();
-			} else {
-				return ResponseEntity.internalServerError().build();
-			}
-		}
+	public ResponseEntity<?> downloadAPK(@PathVariable String titulo) {
+	    if (titulo == null || titulo.trim().isEmpty()) {
+	        return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
+	    }
+
+	    try {
+	        String apk = titulo + ".apk";
+	        Resource resource = servicio.downloadAPK(apk);
+
+	        return ResponseEntity.ok()
+	        		.contentType(MediaType.APPLICATION_OCTET_STREAM)
+	                .header("Content-Disposition", "attachment; filename=\"" + apk + "\"")
+	                .body(resource);
+	    } catch (ResponseStatusException e) {
+	        if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+	            return ResponseEntity.status(404).body("No se encontró el archivo APK: " + titulo);
+	        } else {
+	            return ResponseEntity.internalServerError().body("Error al intentar descargar la APK: " + e.getMessage());
+	        }
+	    }
 	}
 	
 	@GetMapping("/hash/{titulo}")
 	public ResponseEntity<String> getHash(@PathVariable String titulo, @RequestParam(required = false) String algoritmo) {
 		if (titulo == null || titulo.trim().isEmpty()) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 		}
 		
 		try {
@@ -186,11 +202,11 @@ public class Controlador {
 			return ResponseEntity.ok().body(hash);
 		} catch (ResponseStatusException e) {
 			if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-				return ResponseEntity.notFound().build();
+				return ResponseEntity.status(404).body("No se encontró el archivo APK: " + titulo);
 			} else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
 				return ResponseEntity.badRequest().body("Los algoritmos válidos son: MD5, SHA-1 y SHA-256");
 			} else {
-				return ResponseEntity.internalServerError().build();
+				return ResponseEntity.internalServerError().body("Error interno al calcular el hash");
 			}
 		}
 	}
