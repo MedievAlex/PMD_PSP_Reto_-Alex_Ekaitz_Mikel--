@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.emastore.R;
 import com.example.emastore.client.RetrofitClient;
 import com.example.emastore.model.APK;
+import com.example.emastore.model.MenuItem;
 import com.example.emastore.service.ApiService;
 import com.example.emastore.service.AudioService;
 
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     // ============= VARIABLES DE INSTANCIA =============
     private RecyclerView recyclerView;
     private MenuAdapter adapter;
+    private List<MenuItem> menuItems = new ArrayList<>();
     private List<APK> listaAPKs = new ArrayList<>();
     private TextView textViewUsuario;
     private String usuarioActual;
@@ -72,21 +74,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void cargarUsuarioActual() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        usuarioActual = prefs.getString(KEY_NOMBRE_USUARIO, "Invitado");
+
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("usuario")) {
-            usuarioActual = intent.getStringExtra("usuario");
+            String usuarioDelIntent = intent.getStringExtra("usuario");
+            if (usuarioDelIntent != null && !usuarioDelIntent.isEmpty()) {
+                usuarioActual = usuarioDelIntent;
+            }
         }
+
         if (textViewUsuario != null) {
             textViewUsuario.setText("Usuario: " + usuarioActual);
         }
-    }
-
-    private void guardarUsuarioEnPrefs(String nombreUsuario) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(KEY_NOMBRE_USUARIO, nombreUsuario);
-        editor.putBoolean(KEY_ESTA_LOGUEADO, true);
-        editor.apply();
     }
 
     // ============= VISTAS =============
@@ -137,27 +138,14 @@ public class MainActivity extends AppCompatActivity {
         startService(new Intent(this, AudioService.class).setAction(AudioService.ACTION_PAUSE));
     }
 
-    private void cerrarSesion() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        prefs.edit().remove(KEY_NOMBRE_USUARIO).remove(KEY_ESTA_LOGUEADO).apply();
-
-        pausarAudioService();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        finish();
-    }
-
-    private void salirAplicacion() {
-        pausarAudioService();
-        finishAffinity();
-        System.exit(0);
-    }
-
     // ============= RECYCLER VIEW / API =============
     private void configurarRecyclerView() {
-        adapter = new MenuAdapter(listaAPKs, apk -> abrirDetallesAPK(apk));
+        adapter = new MenuAdapter(menuItems, item -> {
+            int index = menuItems.indexOf(item);
+            if (index >= 0 && index < listaAPKs.size()) {
+                abrirDetallesAPK(listaAPKs.get(index));
+            }
+        });
         recyclerView.setAdapter(adapter);
     }
 
@@ -178,8 +166,20 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<List<APK>> call, Response<List<APK>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     listaAPKs.clear();
+
+                    for (APK apk : response.body()) {
+                        apk.setImage(apk.getImage());
+                    }
+
                     listaAPKs.addAll(response.body());
+                    menuItems.clear();
+
+                    for (APK apk : listaAPKs) {
+                        menuItems.add(new MenuItem(apk.getTitulo(), apk.getImageBitmap()));
+                    }
+
                     adapter.notifyDataSetChanged();
+
                 } else {
                     Toast.makeText(MainActivity.this, "Error al cargar APKs: " + response.code(), Toast.LENGTH_SHORT).show();
                     cargarDatosEjemplo();
@@ -202,6 +202,12 @@ public class MainActivity extends AppCompatActivity {
         listaAPKs.add(new APK("Spotify", "Spotify AB", "Streaming de música", "spotify_icon"));
         listaAPKs.add(new APK("Netflix", "Netflix Inc", "Streaming de video", "netflix_icon"));
         listaAPKs.add(new APK("YouTube", "Google", "Plataforma de videos", "youtube_icon"));
+
+        menuItems.clear();
+        for (APK apk : listaAPKs) {
+            menuItems.add(new MenuItem(apk.getTitulo(), apk.getImageBitmap()));
+        }
+
         adapter.notifyDataSetChanged();
         Toast.makeText(this, "Mostrando datos de ejemplo", Toast.LENGTH_SHORT).show();
     }
@@ -212,6 +218,24 @@ public class MainActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void cerrarSesion() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().remove(KEY_NOMBRE_USUARIO).remove(KEY_ESTA_LOGUEADO).apply();
+
+        pausarAudioService();
+
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void salirAplicacion() {
+        pausarAudioService();
+        finishAffinity();
+        System.exit(0);
     }
 
     // ============= CICLO DE VIDA =============
@@ -230,6 +254,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        pausarAudioService();
     }
 }

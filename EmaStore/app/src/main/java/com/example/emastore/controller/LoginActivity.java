@@ -112,6 +112,7 @@ public class LoginActivity extends AppCompatActivity {
         } else {
             etPassword.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
             btnTogglePass.setImageResource(R.drawable.ic_visibility_off);
+
         }
         etPassword.setSelection(etPassword.getText().length());
         isPasswordVisible = !isPasswordVisible;
@@ -189,13 +190,6 @@ public class LoginActivity extends AppCompatActivity {
     private void irAMainActivity(String nombreUsuario) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("usuario", nombreUsuario);
-        startActivity(intent);
-        finish();
-    }
-
-    private void volverALogin() {
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
     }
