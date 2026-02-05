@@ -62,7 +62,7 @@ public class Controlador {
 		    	return ResponseEntity.status(409).body("El usuario ya existe");
 		    }
 		    
-		    return ResponseEntity.status(201).body("Usuario registrado: " + u.getNombre());
+		    return ResponseEntity.status(201).body(u.getNombre());
 		} catch (ResponseStatusException e) {
 			return ResponseEntity.internalServerError().body("Error interno en el servidor");
 		}

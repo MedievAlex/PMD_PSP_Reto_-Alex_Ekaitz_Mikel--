@@ -1,4 +1,4 @@
-package com.example.emastore;
+package com.example.emastore.controller;
 
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -11,6 +11,8 @@ import android.widget.VideoView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.emastore.R;
 
 public class DetailsActivity extends AppCompatActivity {
     private VideoView videoView;
