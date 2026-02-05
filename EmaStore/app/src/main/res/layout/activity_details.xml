@@ -124,7 +124,8 @@
         android:layout_height="60dp"
         android:orientation="horizontal"
         tools:layout_editor_absoluteX="28dp"
-        tools:layout_editor_absoluteY="643dp">
+        tools:layout_editor_absoluteY="643dp"
+        tools:ignore="MissingConstraints">
 
         <TextView
             android:id="@+id/textView3"

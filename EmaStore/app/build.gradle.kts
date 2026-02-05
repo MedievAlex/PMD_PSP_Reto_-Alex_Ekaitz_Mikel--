@@ -44,11 +44,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    //conexion api
+    //RETROFIT
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.picasso:picasso:2.8")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    //logica ojo
+    implementation("com.google.code.gson:gson:2.10")
+    //Logica ojo
     implementation("com.google.android.material:material:1.9.0")
 }

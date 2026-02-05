@@ -3,16 +3,16 @@ package com.example.emastore;
 public class MenuItem {
     private int id;
     private String title;
-    private int iconResource;
+    private int iconResId;
 
-    public MenuItem(int id, String title, int iconResource) {
+    public MenuItem(int id, String title, int iconResId) {
         this.id = id;
         this.title = title;
-        this.iconResource = iconResource;
+        this.iconResId = iconResId;
     }
 
-    // Getters y setters
+    // Getters
     public int getId() { return id; }
     public String getTitle() { return title; }
-    public int getIconResource() { return iconResource; }
+    public int getIconResId() { return iconResId; }
 }
