@@ -276,6 +276,8 @@ public class Servicio {
 
 	    String tituloOriginal = existente.getTitulo();
 	    String descripcionOriginal = existente.getDescripcion();
+	    String autorOriginal = existente.getAutor();
+	    String imagenOriginal = existente.getImage();
 
 	    if (apk.getTitulo() != null && !apk.getTitulo().equalsIgnoreCase(titulo)) {
 	        if (getAPK(apk.getTitulo()) != null) {
@@ -288,12 +290,22 @@ public class Servicio {
 	    if (apk.getDescripcion() != null) {
 	        existente.setDescripcion(apk.getDescripcion());
 	    }
+	    
+	    if (apk.getAutor() != null) {
+	    	existente.setAutor(apk.getAutor());
+	    }
+	    
+	    if (apk.getImage() != null || apk.getImage().trim().isEmpty()) {
+	    	existente.setImage(apk.getImage());
+	    }
 
 	    try {
 	        guardarJson(APKS_FILE, apks);
 	    } catch (Exception e) {
 	        existente.setTitulo(tituloOriginal);
 	        existente.setDescripcion(descripcionOriginal);
+	        existente.setAutor(autorOriginal);
+	        existente.setImage(imagenOriginal);
 	        
 	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
