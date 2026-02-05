@@ -2,136 +2,193 @@ package com.example.emastore.controller;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.emastore.R;
-import com.example.emastore.service.ApiService;
 import com.example.emastore.client.RetrofitClient;
 import com.example.emastore.model.APK;
+import com.example.emastore.service.ApiService;
+import com.example.emastore.service.AudioService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    // ============= CONSTANTES =============
+    private static final String TAG = "MainActivity";
+    private static final String PREFS_NAME = "UsuarioPrefs";
+    private static final String KEY_NOMBRE_USUARIO = "nombreUsuario";
+    private static final String KEY_ESTA_LOGUEADO = "estaLogueado";
+    private static final String KEY_AUDIO_ENABLED = "audioEnabled";
+
+    // ============= VARIABLES DE INSTANCIA =============
     private RecyclerView recyclerView;
     private MenuAdapter adapter;
     private List<APK> listaAPKs = new ArrayList<>();
-    private MediaPlayer mediaPlayer;
-    private boolean isAudioPlaying = true;
+    private TextView textViewUsuario;
     private String usuarioActual;
-    private TextView textView3;
-    private static final String TAG = "MainActivity";
+    private boolean isAudioPlaying = true;
 
+    // ============= CICLO DE VIDA =============
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        try {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_main);
+        super.onCreate(savedInstanceState);
 
-            initViews();
-            obtenerUsuarioActual();
-            setupRecyclerView();
-            setupButtons();
-            setupAudio();
-            cargarAPKsDesdeAPI();
+        if (verificarSesionExistente()) return;
 
-        } catch (Exception e) {
-            Log.e(TAG, "ERROR en onCreate: " + e.getMessage(), e);
-            Toast.makeText(this, "Error al iniciar: " + e.getMessage(),
-                    Toast.LENGTH_LONG).show();
+        setContentView(R.layout.activity_main);
+        inicializarVistas();
+        configurarBotones();
+        configurarRecyclerView();
+        cargarUsuarioActual();
+        cargarAPKsDesdeAPI();
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
+    }
+
+    // ============= SESIÓN =============
+    private boolean verificarSesionExistente() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean estaLogueado = prefs.getBoolean(KEY_ESTA_LOGUEADO, false);
+        if (!estaLogueado) {
             volverALogin();
+            return true;
+        }
+        usuarioActual = prefs.getString(KEY_NOMBRE_USUARIO, "Invitado");
+        return false;
+    }
+
+    private void cargarUsuarioActual() {
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("usuario")) {
+            usuarioActual = intent.getStringExtra("usuario");
+        }
+        if (textViewUsuario != null) {
+            textViewUsuario.setText("Usuario: " + usuarioActual);
         }
     }
 
-    private void initViews() {
+    private void guardarUsuarioEnPrefs(String nombreUsuario) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_NOMBRE_USUARIO, nombreUsuario);
+        editor.putBoolean(KEY_ESTA_LOGUEADO, true);
+        editor.apply();
+    }
+
+    // ============= VISTAS =============
+    private void inicializarVistas() {
         recyclerView = findViewById(R.id.recyclerView);
-        textView3 = findViewById(R.id.textView3);
+        textViewUsuario = findViewById(R.id.textView3);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
         recyclerView.setLayoutManager(gridLayoutManager);
     }
 
-    private void obtenerUsuarioActual() {
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("usuario")) {
-            usuarioActual = intent.getStringExtra("usuario");
-            Log.d(TAG, "Usuario del Intent: " + usuarioActual);
+    // ============= BOTONES =============
+    private void configurarBotones() {
+        Button btnLogout = findViewById(R.id.btnLogout);
+        Button btnExit = findViewById(R.id.btnExit);
+        Button btnAudio = findViewById(R.id.bttnAudio);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
+        if (btnAudio != null) {
+            btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
+            btnAudio.setOnClickListener(v -> toggleAudio(btnAudio));
         }
 
-        if (usuarioActual == null || usuarioActual.isEmpty()) {
-            SharedPreferences prefs = getSharedPreferences("UsuarioPrefs", MODE_PRIVATE);
-            usuarioActual = prefs.getString("nombreUsuario", "Invitado");
-            boolean estaLogueado = prefs.getBoolean("estaLogueado", false);
-
-            if (!estaLogueado) {
-                Toast.makeText(this, "Sesión no válida", Toast.LENGTH_SHORT).show();
-                volverALogin();
-                return;
-            }
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> cerrarSesion());
         }
 
-        if (textView3 != null) {
-            textView3.setText("Usuario: " + usuarioActual);
+        if (btnExit != null) {
+            btnExit.setOnClickListener(v -> salirAplicacion());
         }
     }
 
-    private void setupRecyclerView() {
-        adapter = new MenuAdapter(listaAPKs, new MenuAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(APK apk) {
-                abrirDetallesAPK(apk);
-            }
-        });
+    private void toggleAudio(Button btnAudio) {
+        isAudioPlaying = !isAudioPlaying;
+        btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_AUDIO_ENABLED, isAudioPlaying).apply();
+
+        if (isAudioPlaying) iniciarAudioService();
+        else pausarAudioService();
+    }
+
+    private void iniciarAudioService() {
+        startService(new Intent(this, AudioService.class).setAction(AudioService.ACTION_PLAY));
+    }
+
+    private void pausarAudioService() {
+        startService(new Intent(this, AudioService.class).setAction(AudioService.ACTION_PAUSE));
+    }
+
+    private void cerrarSesion() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().remove(KEY_NOMBRE_USUARIO).remove(KEY_ESTA_LOGUEADO).apply();
+
+        pausarAudioService();
+
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void salirAplicacion() {
+        pausarAudioService();
+        finishAffinity();
+        System.exit(0);
+    }
+
+    // ============= RECYCLER VIEW / API =============
+    private void configurarRecyclerView() {
+        adapter = new MenuAdapter(listaAPKs, apk -> abrirDetallesAPK(apk));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void abrirDetallesAPK(APK apk) {
+        Intent intent = new Intent(this, DetailsActivity.class);
+        intent.putExtra("titulo", apk.getTitulo());
+        intent.putExtra("autor", apk.getAutor());
+        intent.putExtra("descripcion", apk.getDescripcion());
+        intent.putExtra("image", apk.getImage());
+        startActivity(intent);
     }
 
     private void cargarAPKsDesdeAPI() {
         ApiService apiService = RetrofitClient.getApiService();
-
         Call<List<APK>> call = apiService.getApks();
-        call.enqueue(new Callback<List<APK>>() {
+        call.enqueue(new Callback<>() {
             @Override
             public void onResponse(Call<List<APK>> call, Response<List<APK>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     listaAPKs.clear();
                     listaAPKs.addAll(response.body());
-
                     adapter.notifyDataSetChanged();
-
-                    Log.d(TAG, "APKs cargadas: " + listaAPKs.size());
-                    if (listaAPKs.isEmpty()) {
-                        Toast.makeText(MainActivity.this,
-                                "No hay APKs disponibles",
-                                Toast.LENGTH_SHORT).show();
-                    }
-
                 } else {
-                    Log.e(TAG, "Error al cargar APKs. Código: " + response.code());
-                    Toast.makeText(MainActivity.this,
-                            "Error al cargar APKs: " + response.code(),
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Error al cargar APKs: " + response.code(), Toast.LENGTH_SHORT).show();
                     cargarDatosEjemplo();
                 }
             }
 
             @Override
             public void onFailure(Call<List<APK>> call, Throwable t) {
-                Log.e(TAG, "Error de conexión: " + t.getMessage());
-                Toast.makeText(MainActivity.this,
-                        "Error de conexión: " + t.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 cargarDatosEjemplo();
             }
         });
@@ -145,133 +202,11 @@ public class MainActivity extends AppCompatActivity {
         listaAPKs.add(new APK("Spotify", "Spotify AB", "Streaming de música", "spotify_icon"));
         listaAPKs.add(new APK("Netflix", "Netflix Inc", "Streaming de video", "netflix_icon"));
         listaAPKs.add(new APK("YouTube", "Google", "Plataforma de videos", "youtube_icon"));
-
         adapter.notifyDataSetChanged();
         Toast.makeText(this, "Mostrando datos de ejemplo", Toast.LENGTH_SHORT).show();
     }
 
-    private void abrirDetallesAPK(APK apk) {
-        Intent intent = new Intent(MainActivity.this, DetailsActivity.class);
-        intent.putExtra("titulo", apk.getTitulo());
-        intent.putExtra("autor", apk.getAutor());
-        intent.putExtra("descripcion", apk.getDescripcion());
-        intent.putExtra("image", apk.getImage());
-
-        startActivity(intent);
-    }
-
-    private void setupButtons() {
-        Button btnLogout = findViewById(R.id.btnLogout);
-        Button btnExit = findViewById(R.id.btnExit);
-        Button btnAudio = findViewById(R.id.bttnAudio);
-
-        if (btnLogout != null) {
-            btnLogout.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    cerrarSesion();
-                }
-            });
-        }
-
-        if (btnExit != null) {
-            btnExit.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    salirAplicacion();
-                }
-            });
-        }
-        if (btnAudio != null) {
-            btnAudio.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    toggleAudio();
-                }
-            });
-        }
-    }
-
-    private void cerrarSesion() {
-        SharedPreferences prefs = getSharedPreferences("UsuarioPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.apply();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        finish();
-    }
-
-    private void salirAplicacion() {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-        finishAffinity();
-        System.exit(0);
-    }
-
-    private void toggleAudio() {
-        try {
-            Button btnAudio = findViewById(R.id.bttnAudio);
-            if (isAudioPlaying) {
-                btnAudio.setText(R.string.unmute_audio);
-                audioPlayer(false);
-                isAudioPlaying = false;
-                Log.d(TAG, "Audio pausado");
-            } else {
-                btnAudio.setText(R.string.mute_audio);
-                audioPlayer(true);
-                isAudioPlaying = true;
-                Log.d(TAG, "Audio iniciado");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error en toggleAudio: " + e.getMessage());
-        }
-    }
-
-    private void setupAudio() {
-        try {
-            mediaPlayer = MediaPlayer.create(this, R.raw.background_music);
-            if (mediaPlayer != null) {
-                mediaPlayer.setLooping(true);
-                if (isAudioPlaying) {
-                    mediaPlayer.start();
-                }
-                Log.d(TAG, "MediaPlayer creado exitosamente");
-            } else {
-                Log.e(TAG, "Error: MediaPlayer es null");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error creando MediaPlayer: " + e.getMessage());
-        }
-    }
-
-    private void audioPlayer(boolean shouldPlay) {
-        try {
-            if (mediaPlayer != null) {
-                if (shouldPlay) {
-                    if (!mediaPlayer.isPlaying()) {
-                        mediaPlayer.start();
-                    }
-                } else {
-                    if (mediaPlayer.isPlaying()) {
-                        mediaPlayer.pause();
-                    }
-                }
-            } else {
-                Log.w(TAG, "MediaPlayer es null en audioPlayer");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error en audioPlayer: " + e.getMessage());
-        }
-    }
-
+    // ============= NAVEGACIÓN =============
     private void volverALogin() {
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -279,29 +214,22 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
+    // ============= CICLO DE VIDA =============
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (mediaPlayer != null && isAudioPlaying && !mediaPlayer.isPlaying()) {
-            mediaPlayer.start();
-        }
+        if (isAudioPlaying) iniciarAudioService();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-        }
+        if (isAudioPlaying) pausarAudioService();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        pausarAudioService();
     }
 }

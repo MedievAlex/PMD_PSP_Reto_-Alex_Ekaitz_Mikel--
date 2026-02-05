@@ -15,9 +15,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.emastore.R;
-import com.example.emastore.service.ApiService;
 import com.example.emastore.client.RetrofitClient;
 import com.example.emastore.model.Usuario;
+import com.example.emastore.service.ApiService;
 import com.example.emastore.service.AudioService;
 
 import retrofit2.Call;
@@ -34,154 +34,38 @@ public class LoginActivity extends AppCompatActivity {
     private static final String KEY_AUDIO_ENABLED = "audioEnabled";
 
     // ============= VARIABLES DE INSTANCIA =============
-    private boolean isPasswordVisible = false;
+    private EditText etUser, etPassword;
     private ImageButton btnTogglePass;
-    private EditText etPassword, etUser;
-    private boolean isAudioPlaying = true;
+    private boolean isPasswordVisible = false;
+    private boolean isAudioPlaying;
 
+    // ============= CICLO DE VIDA =============
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (verificarSesionExistente()) {
-            return;
-        }
+        if (verificarSesionExistente()) return;
 
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
 
         inicializarVistas();
-        configurarListeners();
+        configurarBotones();
 
-        // ✅ Iniciar el servicio de audio
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
-
-        if (isAudioPlaying) {
-            iniciarAudioService();
-        }
     }
 
+    // ============= SESIÓN =============
     private boolean verificarSesionExistente() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean estaLogueado = prefs.getBoolean(KEY_ESTA_LOGUEADO, false);
-
         if (estaLogueado) {
             String nombreUsuario = prefs.getString(KEY_NOMBRE_USUARIO, "");
             irAMainActivity(nombreUsuario);
             return true;
         }
         return false;
-    }
-
-    private void inicializarVistas() {
-        btnTogglePass = findViewById(R.id.btnTogglePass1);
-        etPassword = findViewById(R.id.etPassword1);
-        etUser = findViewById(R.id.etUser);
-
-        btnTogglePass.setImageResource(R.drawable.ic_visibility);
-    }
-
-    private void configurarListeners() {
-        Button btnLogin = findViewById(R.id.btnLogin);
-        Button btnSignUp = findViewById(R.id.btnSignup);
-        Button btnExit = findViewById(R.id.btnExit);
-        Button btnAudio = findViewById(R.id.bttnAudio);
-
-        btnLogin.setOnClickListener(v -> realizarLogin());
-        btnTogglePass.setOnClickListener(v -> togglePasswordVisibility());
-
-        btnSignUp.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, SignupActivity.class));
-            finish();
-        });
-
-        btnExit.setOnClickListener(v -> {
-            detenerAudioService();
-            finish();
-        });
-
-        // ✅ CONTROL DE AUDIO MEJORADO
-        btnAudio.setOnClickListener(v -> {
-            isAudioPlaying = !isAudioPlaying;
-
-            if (isAudioPlaying) {
-                btnAudio.setText(R.string.mute_audio);
-                iniciarAudioService();
-            } else {
-                btnAudio.setText(R.string.unmute_audio);
-                pausarAudioService();
-            }
-
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            prefs.edit().putBoolean(KEY_AUDIO_ENABLED, isAudioPlaying).apply();
-        });
-
-        btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
-    }
-
-    private void realizarLogin() {
-        String username = etUser.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
-
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this,
-                    "Por favor, completa todos los campos",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Usuario usuario = new Usuario();
-        usuario.setNombre(username);
-        usuario.setContraseña(password);
-
-        ApiService apiService = RetrofitClient.getApiService();
-        Call<String> call = apiService.login(usuario);
-
-        call.enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                manejarRespuestaLogin(response);
-            }
-
-            @Override
-            public void onFailure(Call<String> call, Throwable t) {
-                Log.e(TAG, "Error de conexión", t);
-                Toast.makeText(LoginActivity.this,
-                        "Error de conexión: " + t.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void manejarRespuestaLogin(Response<String> response) {
-        Log.d(TAG, "Código HTTP: " + response.code());
-
-        if (response.isSuccessful() && response.body() != null) {
-            String nombreUsuario = response.body();
-
-            Toast.makeText(LoginActivity.this,
-                    "Bienvenido " + nombreUsuario,
-                    Toast.LENGTH_SHORT).show();
-
-            guardarUsuarioEnPrefs(nombreUsuario);
-            irAMainActivity(nombreUsuario);
-
-        } else if (response.code() == 401) {
-            Toast.makeText(LoginActivity.this,
-                    "Usuario o contraseña incorrectos",
-                    Toast.LENGTH_SHORT).show();
-
-        } else if (response.code() == 400) {
-            Toast.makeText(LoginActivity.this,
-                    "Datos inválidos",
-                    Toast.LENGTH_SHORT).show();
-
-        } else {
-            Toast.makeText(LoginActivity.this,
-                    "Error del servidor: " + response.code(),
-                    Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void guardarUsuarioEnPrefs(String nombreUsuario) {
@@ -192,11 +76,33 @@ public class LoginActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    private void irAMainActivity(String nombreUsuario) {
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-        intent.putExtra("usuario", nombreUsuario);
-        startActivity(intent);
-        finish();
+    // ============= VISTAS =============
+    private void inicializarVistas() {
+        etUser = findViewById(R.id.etUser);
+        etPassword = findViewById(R.id.etPassword1);
+        btnTogglePass = findViewById(R.id.btnTogglePass1);
+        btnTogglePass.setImageResource(R.drawable.ic_visibility);
+    }
+
+    // ============= BOTONES =============
+    private void configurarBotones() {
+        Button btnLogin = findViewById(R.id.btnLogin);
+        Button btnSignUp = findViewById(R.id.btnSignup);
+        Button btnExit = findViewById(R.id.btnExit);
+        Button btnAudio = findViewById(R.id.bttnAudio);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
+        btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
+
+        btnLogin.setOnClickListener(v -> realizarLogin());
+        btnSignUp.setOnClickListener(v -> {
+            startActivity(new Intent(this, SignupActivity.class));
+            finish();
+        });
+        btnExit.setOnClickListener(v -> salirAplicacion());
+        btnTogglePass.setOnClickListener(v -> togglePasswordVisibility());
+        btnAudio.setOnClickListener(v -> toggleAudio(btnAudio));
     }
 
     private void togglePasswordVisibility() {
@@ -212,6 +118,15 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     // ============= CONTROL DEL SERVICIO DE AUDIO =============
+    private void toggleAudio(Button btnAudio) {
+        isAudioPlaying = !isAudioPlaying;
+        btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_AUDIO_ENABLED, isAudioPlaying).apply();
+
+        if (isAudioPlaying) iniciarAudioService();
+        else pausarAudioService();
+    }
 
     private void iniciarAudioService() {
         Intent serviceIntent = new Intent(this, AudioService.class);
@@ -225,12 +140,84 @@ public class LoginActivity extends AppCompatActivity {
         startService(serviceIntent);
     }
 
-    private void detenerAudioService() {
-        Intent serviceIntent = new Intent(this, AudioService.class);
-        stopService(serviceIntent);
+    // ============= LOGIN =============
+    private void realizarLogin() {
+        String username = etUser.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre(username);
+        usuario.setContraseña(password);
+
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<String> call = apiService.login(usuario);
+        call.enqueue(new Callback<>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                manejarRespuestaLogin(response);
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                Log.e(TAG, "Error de conexión", t);
+                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void manejarRespuestaLogin(Response<String> response) {
+        Log.d(TAG, "Código HTTP: " + response.code());
+        if (response.isSuccessful() && response.body() != null) {
+            String nombreUsuario = response.body();
+            Toast.makeText(this, "Bienvenido " + nombreUsuario, Toast.LENGTH_SHORT).show();
+            guardarUsuarioEnPrefs(nombreUsuario);
+            irAMainActivity(nombreUsuario);
+        } else if (response.code() == 401) {
+            Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();
+        } else if (response.code() == 400) {
+            Toast.makeText(this, "Datos inválidos", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Error del servidor: " + response.code(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ============= NAVEGACIÓN =============
+    private void irAMainActivity(String nombreUsuario) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("usuario", nombreUsuario);
+        startActivity(intent);
+        finish();
+    }
+
+    private void volverALogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void salirAplicacion() {
+        pausarAudioService();
+        finishAffinity();
+        System.exit(0);
     }
 
     // ============= CICLO DE VIDA =============
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isAudioPlaying) iniciarAudioService();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (isAudioPlaying) pausarAudioService();
+    }
 
     @Override
     protected void onDestroy() {

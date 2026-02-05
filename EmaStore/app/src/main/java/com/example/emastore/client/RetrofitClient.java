@@ -10,24 +10,33 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class RetrofitClient {
-    private static Retrofit retrofit = null;
-    private static final int TIMEOUT_SECONDS = 30;
 
-    public static ApiService getApiService() {
-        if (retrofit == null) {
+    private static final int TIMEOUT_SECONDS = 10;
+
+    private static ApiService apiService;
+
+    private RetrofitClient() {}
+
+    public static synchronized ApiService getApiService() {
+
+        if (apiService == null) {
+
             OkHttpClient client = new OkHttpClient.Builder()
                     .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .build();
 
-            retrofit = new Retrofit.Builder()
+            Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl(ApiService.BASE_URL)
                     .client(client)
                     .addConverterFactory(ScalarsConverterFactory.create())
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
+
+            apiService = retrofit.create(ApiService.class);
         }
-        return retrofit.create(ApiService.class);
+
+        return apiService;
     }
 }

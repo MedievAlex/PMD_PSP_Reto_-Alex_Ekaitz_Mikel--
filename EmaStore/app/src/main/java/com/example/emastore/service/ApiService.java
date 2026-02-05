@@ -30,56 +30,28 @@ public interface ApiService {
 
     // ============= GESTIÓN DE APKs =============
 
-    /**
-     * Obtiene todas las APKs disponibles
-     */
     @GET("apks")
     Call<List<APK>> getApks();
 
-    /**
-     * Obtiene una APK específica por título
-     * @param titulo Título de la APK
-     */
     @GET("apk/{titulo}")
     Call<APK> getApk(@Path("titulo") String titulo);
 
-    /**
-     * Crea una nueva APK
-     * @param apk Objeto APK a crear
-     */
     @POST("apk")
     Call<APK> addApk(@Body APK apk);
 
-    /**
-     * Actualiza una APK existente
-     * @param titulo Título de la APK a actualizar
-     * @param apk Nuevos datos de la APK
-     */
     @PUT("apk/{titulo}")
     Call<APK> updateApk(@Path("titulo") String titulo, @Body APK apk);
 
-    /**
-     * Elimina una APK
-     * @param titulo Título de la APK a eliminar
-     */
     @DELETE("apk/{titulo}")
-    Call<String> deleteApk(@Path("titulo") String titulo);
+    Call<Void> deleteApk(@Path("titulo") String titulo);
 
     // ============= DESCARGA Y HASH =============
 
-    /**
-     * Descarga el archivo APK
-     * @param titulo Título de la APK a descargar
-     */
     @Streaming
     @GET("download/{titulo}")
     Call<ResponseBody> downloadApk(@Path("titulo") String titulo);
 
-    /**
-     * Obtiene el hash de una APK
-     * @param titulo Título de la APK
-     * @param algoritmo Algoritmo de hash (MD5, SHA-1, SHA-256). Opcional.
-     */
     @GET("hash/{titulo}")
-    Call<String> getHash(@Path("titulo") String titulo, @Query("algoritmo") String algoritmo);
+    Call<String> getHash(@Path("titulo") String titulo, @Query("algoritmo") String algoritmo
+    );
 }
