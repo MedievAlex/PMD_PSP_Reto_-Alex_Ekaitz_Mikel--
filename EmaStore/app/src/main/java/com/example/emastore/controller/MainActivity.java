@@ -76,21 +76,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void cargarUsuarioActual() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        usuarioActual = prefs.getString(KEY_NOMBRE_USUARIO, "Invitado");
+
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("usuario")) {
-            usuarioActual = intent.getStringExtra("usuario");
+            String usuarioDelIntent = intent.getStringExtra("usuario");
+            if (usuarioDelIntent != null && !usuarioDelIntent.isEmpty()) {
+                usuarioActual = usuarioDelIntent;
+            }
         }
+
         if (textViewUsuario != null) {
             textViewUsuario.setText("Usuario: " + usuarioActual);
         }
-    }
-
-    private void guardarUsuarioEnPrefs(String nombreUsuario) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(KEY_NOMBRE_USUARIO, nombreUsuario);
-        editor.putBoolean(KEY_ESTA_LOGUEADO, true);
-        editor.apply();
     }
 
     // ============= VISTAS =============
@@ -144,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
     // ============= RECYCLER VIEW / API =============
     private void configurarRecyclerView() {
         adapter = new MenuAdapter(menuItems, item -> {
-            // Abrir detalles del APK correspondiente según la posición
             int index = menuItems.indexOf(item);
             if (index >= 0 && index < listaAPKs.size()) {
                 abrirDetallesAPK(listaAPKs.get(index));
