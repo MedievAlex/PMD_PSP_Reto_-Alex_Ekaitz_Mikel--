@@ -1,18 +1,17 @@
 package com.example.emastore.model;
 
-public class MenuItem {
-    private int id;
-    private String title;
-    private int iconResId;
+import android.graphics.Bitmap;
 
-    public MenuItem(int id, String title, int iconResId) {
-        this.id = id;
+public class MenuItem {
+    private String title;
+    private Bitmap icon;
+
+    public MenuItem(String title, Bitmap icon) {
         this.title = title;
-        this.iconResId = iconResId;
+        this.icon = icon;
     }
 
     // Getters
-    public int getId() { return id; }
     public String getTitle() { return title; }
-    public int getIconResId() { return iconResId; }
+    public Bitmap getIcon() { return icon; }
 }
