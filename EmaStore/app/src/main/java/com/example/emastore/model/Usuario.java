@@ -1,4 +1,4 @@
-package com.example.emastore;
+package com.example.emastore.model;
 
 public class Usuario {
     private String nombre;

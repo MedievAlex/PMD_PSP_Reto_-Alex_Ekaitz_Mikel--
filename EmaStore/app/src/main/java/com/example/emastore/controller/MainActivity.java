@@ -1,4 +1,4 @@
-package com.example.emastore;
+package com.example.emastore.controller;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,6 +12,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.emastore.R;
+import com.example.emastore.service.ApiService;
+import com.example.emastore.client.RetrofitClient;
+import com.example.emastore.model.APK;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;

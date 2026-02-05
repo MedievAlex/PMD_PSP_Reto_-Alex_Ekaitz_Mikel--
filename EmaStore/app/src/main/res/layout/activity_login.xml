@@ -117,9 +117,9 @@
                         android:layout_width="48dp"
                         android:layout_height="match_parent"
                         android:background="@null"
-                        android:src="@drawable/ic_visibility_off"
+                        android:contentDescription="Mostrar/ocultar contraseña"
                         android:scaleType="center"
-                        android:contentDescription="Mostrar/ocultar contraseña"/>
+                        android:src="@drawable/ic_visibility" />
                 </LinearLayout>
             </LinearLayout>
 
