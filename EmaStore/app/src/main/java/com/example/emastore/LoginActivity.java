@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
 
 public class LoginActivity extends AppCompatActivity {
     private boolean isPasswordVisible = false;
@@ -92,57 +93,70 @@ public class LoginActivity extends AppCompatActivity {
     private void realizarLogin() {
         String username = etUser.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        Log.v(username, password);
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Por favor, completa todos los campos",
+            Toast.makeText(this,
+                    "Por favor, completa todos los campos",
                     Toast.LENGTH_SHORT).show();
             return;
         }
+
         Usuario usuario = new Usuario();
         usuario.setNombre(username);
         usuario.setContraseña(password);
 
-
         ApiService apiService = RetrofitClient.getApiService();
+        Call<ResponseBody> call = apiService.login(usuario);
 
-        Call<String> call = apiService.login(usuario);
-        call.enqueue(new Callback<String>() {
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                Log.d("LOGIN_RESPONSE", "Código: " + response.code());
+            public void onResponse(Call<ResponseBody> call,
+                                   Response<ResponseBody> response) {
+
+                Log.d("LOGIN_RESPONSE", "Código HTTP: " + response.code());
 
                 if (response.isSuccessful() && response.body() != null) {
-                    String nombreUsuario = response.body();
+                    try {
+                        String nombreUsuario = response.body().string();
 
-                    Toast.makeText(LoginActivity.this,
-                            "Bienvenido " + nombreUsuario,
-                            Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this,
+                                "Bienvenido " + nombreUsuario,
+                                Toast.LENGTH_SHORT).show();
 
-                    guardarUsuarioEnPrefs(nombreUsuario);
+                        guardarUsuarioEnPrefs(nombreUsuario);
 
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("usuario", nombreUsuario);
-                    startActivity(intent);
-                    finish();
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.putExtra("usuario", nombreUsuario);
+                        startActivity(intent);
+                        finish();
+
+                    } catch (Exception e) {
+                        Log.e("LOGIN_PARSE_ERROR", "Error leyendo respuesta", e);
+                        Toast.makeText(LoginActivity.this,
+                                "Error al procesar la respuesta del servidor",
+                                Toast.LENGTH_SHORT).show();
+                    }
 
                 } else if (response.code() == 401) {
                     Toast.makeText(LoginActivity.this,
                             "Usuario o contraseña incorrectos",
                             Toast.LENGTH_SHORT).show();
+
                 } else if (response.code() == 400) {
                     Toast.makeText(LoginActivity.this,
                             "Datos inválidos",
                             Toast.LENGTH_SHORT).show();
+
                 } else {
                     Toast.makeText(LoginActivity.this,
-                            "Error en el servidor: " + response.code(),
+                            "Error del servidor: " + response.code(),
                             Toast.LENGTH_SHORT).show();
                 }
             }
+
             @Override
-            public void onFailure(Call<String> call, Throwable t) {
-                Log.e("RetrofitError", "Error de conexión: ", t);
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e("RetrofitError", "Error de conexión", t);
                 Toast.makeText(LoginActivity.this,
                         "Error de conexión: " + t.getMessage(),
                         Toast.LENGTH_SHORT).show();
