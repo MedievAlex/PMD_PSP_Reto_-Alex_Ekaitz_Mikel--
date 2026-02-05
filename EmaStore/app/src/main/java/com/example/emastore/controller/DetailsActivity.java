@@ -2,16 +2,30 @@ package com.example.emastore.controller;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.emastore.R;
+import com.example.emastore.client.RetrofitClient;
 import com.example.emastore.model.APK;
+import com.example.emastore.service.ApiService;
 import com.example.emastore.service.AudioService;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DetailsActivity extends AppCompatActivity {
 
@@ -87,6 +101,7 @@ public class DetailsActivity extends AppCompatActivity {
         Button btnBack = findViewById(R.id.btnBack);
         Button btnExit = findViewById(R.id.btnExit);
         Button btnAudio = findViewById(R.id.bttnAudio);
+        Button btnDownload = findViewById(R.id.btnDownload);
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
@@ -101,6 +116,10 @@ public class DetailsActivity extends AppCompatActivity {
 
         if (btnExit != null) {
             btnExit.setOnClickListener(v -> salirAplicacion());
+        }
+
+        if (btnDownload != null) {
+            btnDownload.setOnClickListener(v -> descargarAPK());
         }
     }
 
@@ -143,6 +162,18 @@ public class DetailsActivity extends AppCompatActivity {
                 imageAPK.setImageBitmap(apkActual.getImageBitmap());
             }
         }
+    }
+
+    // ============= DESCARGAR APK =============
+    private void descargarAPK() {
+        if (apkActual == null) return;
+
+        String titulo = apkActual.getTitulo();
+        String downloadUrl = ApiService.BASE_URL + "download/" + titulo;
+
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
+        startActivity(browserIntent);
+        Toast.makeText(this, "Descargando " + titulo, Toast.LENGTH_SHORT).show();
     }
 
     // ============= NAVEGACIÓN =============
