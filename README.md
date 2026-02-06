@@ -1,6 +1,6 @@
 1. Importar los dos proyectos (Api/Client)
-2. click derecho en cada uno de los proyectos run as y luego maven verify, despues de esto se puede arrancar los dos
-3. en el cliente tenermos 7 apartados:
+2. click derecho en cada uno de los proyectos run as y luego maven verify, despues de esto se puede arrancar los dos (en main run as java aplication)
+3. en el cliente tenermos 7 pestañas:
   1. Usuarios: te puedes registrar/logearte
   2. Buscar APKS: se puede buscar una apk concreta(a partir del titulo) o listar todas las apks
   3. Crear Apks: se puede crear una apk rellenando todos los campos.
