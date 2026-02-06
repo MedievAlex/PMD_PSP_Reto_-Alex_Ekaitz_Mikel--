@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:background="@color/gray">
 
     <LinearLayout
         android:layout_width="0dp"
@@ -32,7 +33,7 @@
                 android:text="@string/log_out"
                 android:textSize="16sp"
                 android:paddingHorizontal="16dp"
-                android:minHeight="40dp"/>
+                android:minHeight="40dp" />
 
             <TextView
                 android:layout_width="0dp"
@@ -41,7 +42,8 @@
                 android:gravity="center"
                 android:text="@string/menu"
                 android:textSize="28sp"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                android:background="@color/gray"/>
 
             <Button
                 android:id="@+id/btnExit"
@@ -50,7 +52,7 @@
                 android:text="@string/exit"
                 android:textSize="16sp"
                 android:paddingHorizontal="16dp"
-                android:minHeight="40dp"/>
+                android:minHeight="40dp" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
@@ -59,7 +61,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:padding="8dp"
-            tools:listitem="@layout/item_menu"/>
+            tools:listitem="@layout/item_menu"
+            android:background="@color/gray"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -72,7 +75,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/username" />
+                android:text="@string/username"
+                android:background="@color/gray"/>
 
             <Button
                 android:id="@+id/bttnAudio"

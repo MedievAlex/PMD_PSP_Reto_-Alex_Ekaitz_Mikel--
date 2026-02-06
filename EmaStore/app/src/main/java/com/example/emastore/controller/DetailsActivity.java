@@ -2,51 +2,53 @@ package com.example.emastore.controller;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.Handler;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.emastore.R;
-import com.example.emastore.client.RetrofitClient;
+import com.example.emastore.controller.MediaAdapter;
 import com.example.emastore.model.APK;
+import com.example.emastore.model.MediaItem;
 import com.example.emastore.service.ApiService;
 import com.example.emastore.service.AudioService;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DetailsActivity extends AppCompatActivity {
 
-    // ============= CONSTANTES =============
+    // Constantes
     private static final String PREFS_NAME = "UsuarioPrefs";
     private static final String KEY_NOMBRE_USUARIO = "nombreUsuario";
     private static final String KEY_ESTA_LOGUEADO = "estaLogueado";
     private static final String KEY_AUDIO_ENABLED = "audioEnabled";
 
-    // ============= VARIABLES DE INSTANCIA =============
+    // Views
     private TextView textTitulo, textAutor, textDescripcion, textUsuario;
     private ImageView imageAPK;
     private APK apkActual;
     private String usuarioActual;
     private boolean isAudioPlaying = true;
 
-    private VideoView videoView;
+    // Carrusel simple
+    private ViewPager2 viewPager;
+    private LinearLayout dotsContainer;
+    private MediaAdapter adapter;
+    private List<MediaItem> mediaList = new ArrayList<>();
+    private Handler autoPlayHandler = new Handler();
+    private Runnable autoPlayTask;
 
-    // ============= CICLO DE VIDA =============
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,12 +59,12 @@ public class DetailsActivity extends AppCompatActivity {
         inicializarVistas();
         configurarBotones();
         cargarDatosDesdeIntent();
+        configurarCarruselSimple();
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
     }
 
-    // ============= SESIÓN =============
     private boolean verificarSesionExistente() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean estaLogueado = prefs.getBoolean(KEY_ESTA_LOGUEADO, false);
@@ -74,34 +76,110 @@ public class DetailsActivity extends AppCompatActivity {
         return false;
     }
 
-    private void cargarUsuarioActual() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        usuarioActual = prefs.getString(KEY_NOMBRE_USUARIO, "Invitado");
-
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("usuario")) {
-            String usuarioDelIntent = intent.getStringExtra("usuario");
-            if (usuarioDelIntent != null && !usuarioDelIntent.isEmpty()) {
-                usuarioActual = usuarioDelIntent;
-            }
-        }
-
-        if (textUsuario != null) {
-            textUsuario.setText("Usuario: " + usuarioActual);
-        }
-    }
-
-    // ============= VISTAS =============
     private void inicializarVistas() {
         textTitulo = findViewById(R.id.textTitulo);
         textAutor = findViewById(R.id.textAutor);
         textDescripcion = findViewById(R.id.textDescripcion);
         textUsuario = findViewById(R.id.textView3);
         imageAPK = findViewById(R.id.imageAPK);
-        videoView = findViewById(R.id.videoView);
+        viewPager = findViewById(R.id.viewPager);
+        dotsContainer = findViewById(R.id.dotsContainer);
     }
 
-    // ============= BOTONES =============
+    // ========== CARRUSEL ==========
+    private void configurarCarruselSimple() {
+        mediaList.add(new MediaItem(MediaItem.TYPE_VIDEO, R.raw.video_demo));
+        mediaList.add(new MediaItem(MediaItem.TYPE_IMAGE, R.raw.foto1));
+        mediaList.add(new MediaItem(MediaItem.TYPE_IMAGE, R.raw.foto2));
+        mediaList.add(new MediaItem(MediaItem.TYPE_IMAGE, R.raw.foto3));
+        mediaList.add(new MediaItem(MediaItem.TYPE_IMAGE, R.raw.foto4));
+
+        adapter = new MediaAdapter(mediaList);
+        viewPager.setAdapter(adapter);
+
+        crearPuntosSimples();
+        iniciarAutoPlay();
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                actualizarPuntos(position);
+                pausarVideoAnterior();
+                reiniciarAutoPlay();
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
+                    pausarVideoActual();
+                }
+            }
+        });
+    }
+    private void pausarVideoAnterior() {
+        RecyclerView recyclerView = (RecyclerView) viewPager.getChildAt(0);
+        if (recyclerView != null) {
+            for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(recyclerView.getChildAt(i));
+                if (holder instanceof MediaAdapter.ViewHolder) {
+                    ((MediaAdapter.ViewHolder) holder).pausarVideo();
+                }
+            }
+        }
+    }
+    private void pausarVideoActual() {
+        RecyclerView recyclerView = (RecyclerView) viewPager.getChildAt(0);
+        if (recyclerView != null) {
+            RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(viewPager.getCurrentItem());
+            if (holder instanceof MediaAdapter.ViewHolder) {
+                ((MediaAdapter.ViewHolder) holder).pausarVideo();
+            }
+        }
+    }
+    private void crearPuntosSimples() {
+        dotsContainer.removeAllViews();
+        for (int i = 0; i < mediaList.size(); i++) {
+            ImageView dot = new ImageView(this);
+            dot.setImageResource(R.drawable.dot_unselected);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(12, 12);
+            params.setMargins(4, 0, 4, 0);
+            dot.setLayoutParams(params);
+            dotsContainer.addView(dot);
+        }
+        actualizarPuntos(0);
+    }
+    private void actualizarPuntos(int position) {
+        for (int i = 0; i < dotsContainer.getChildCount(); i++) {
+            ImageView dot = (ImageView) dotsContainer.getChildAt(i);
+            dot.setImageResource(i == position ? R.drawable.dot_selected : R.drawable.dot_unselected);
+        }
+    }
+    private void iniciarAutoPlay() {
+        autoPlayTask = new Runnable() {
+            @Override
+            public void run() {
+                int current = viewPager.getCurrentItem();
+                int next = current + 1;
+                if (next >= mediaList.size()) next = 0;
+
+                pausarVideoActual();
+
+                viewPager.setCurrentItem(next, true);
+                autoPlayHandler.postDelayed(this, 10000);
+            }
+        };
+        autoPlayHandler.postDelayed(autoPlayTask, 10000);
+    }
+    private void reiniciarAutoPlay() {
+        autoPlayHandler.removeCallbacks(autoPlayTask);
+        autoPlayHandler.postDelayed(autoPlayTask, 4000);
+    }
+    private void detenerAutoPlay() {
+        if (autoPlayHandler != null && autoPlayTask != null) {
+            autoPlayHandler.removeCallbacks(autoPlayTask);
+        }
+    }
+
+    // ========== BOTONES ==========
     private void configurarBotones() {
         Button btnBack = findViewById(R.id.btnBack);
         Button btnExit = findViewById(R.id.btnExit);
@@ -110,48 +188,13 @@ public class DetailsActivity extends AppCompatActivity {
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isAudioPlaying = prefs.getBoolean(KEY_AUDIO_ENABLED, true);
-        if (btnAudio != null) {
-            btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
-            btnAudio.setOnClickListener(v -> toggleAudio(btnAudio));
-        }
 
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> volverAMain());
-        }
+        btnAudio.setText(isAudioPlaying ? R.string.mute_audio : R.string.unmute_audio);
+        btnAudio.setOnClickListener(v -> toggleAudio(btnAudio));
 
-        if (btnExit != null) {
-            btnExit.setOnClickListener(v -> salirAplicacion());
-        }
-
-        if (btnDownload != null) {
-            btnDownload.setOnClickListener(v -> descargarAPK());
-        }
-        try {
-            String videoPath = "android.resource://" + getPackageName() + "/" + R.raw.video_demo;
-            Uri videoUri = Uri.parse(videoPath);
-            videoView.setVideoURI(videoUri);
-            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    videoView.start();
-                    mp.setLooping(true);
-                }
-            });
-            videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mp, int what, int extra) {
-                    Toast.makeText(DetailsActivity.this,
-                            "Error al cargar el video. ¿Está en res/raw/?",
-                            Toast.LENGTH_LONG).show();
-                    return true;
-                }
-            });
-        } catch (Exception e) {
-            Toast.makeText(this,
-                    "Error: " + e.getMessage() +
-                            "\nAsegúrate de crear la carpeta res/raw/ y poner un video .mp4",
-                    Toast.LENGTH_LONG).show();
-        }
+        btnBack.setOnClickListener(v -> volverAMain());
+        btnExit.setOnClickListener(v -> salirAplicacion());
+        btnDownload.setOnClickListener(v -> descargarAPK());
     }
 
     private void toggleAudio(Button btnAudio) {
@@ -172,7 +215,6 @@ public class DetailsActivity extends AppCompatActivity {
         startService(new Intent(this, AudioService.class).setAction(AudioService.ACTION_PAUSE));
     }
 
-    // ============= DATOS DEL APK =============
     private void cargarDatosDesdeIntent() {
         Intent intent = getIntent();
         if (intent != null) {
@@ -183,35 +225,34 @@ public class DetailsActivity extends AppCompatActivity {
 
             apkActual = new APK(titulo, autor, descripcion, image);
 
-            if (textTitulo != null) textTitulo.setText(apkActual.getTitulo());
-            if (textAutor != null) textAutor.setText(apkActual.getAutor());
-            if (textDescripcion != null) textDescripcion.setText(apkActual.getDescripcion());
+            textTitulo.setText(apkActual.getTitulo());
+            textAutor.setText(apkActual.getAutor());
+            textDescripcion.setText(apkActual.getDescripcion());
 
             cargarUsuarioActual();
 
-            if (imageAPK != null && apkActual.getImageBitmap() != null) {
+            if (apkActual.getImageBitmap() != null) {
                 imageAPK.setImageBitmap(apkActual.getImageBitmap());
             }
         }
     }
 
-    // ============= DESCARGAR APK =============
-    private void descargarAPK() {
-        if (apkActual == null) return;
-
-        String titulo = apkActual.getTitulo();
-        String downloadUrl = ApiService.BASE_URL + "download/" + titulo;
-
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
-        startActivity(browserIntent);
-        Toast.makeText(this, "Descargando " + titulo, Toast.LENGTH_SHORT).show();
+    private void cargarUsuarioActual() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        usuarioActual = prefs.getString(KEY_NOMBRE_USUARIO, "Invitado");
+        textUsuario.setText("Usuario: " + usuarioActual);
     }
 
-    // ============= NAVEGACIÓN =============
+    private void descargarAPK() {
+        if (apkActual == null) return;
+        String downloadUrl = ApiService.BASE_URL + "download/" + apkActual.getTitulo();
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)));
+        Toast.makeText(this, "Descargando " + apkActual.getTitulo(), Toast.LENGTH_SHORT).show();
+    }
+
     private void volverAMain() {
         pausarAudioService();
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+        startActivity(new Intent(this, MainActivity.class));
         finish();
     }
 
@@ -229,7 +270,6 @@ public class DetailsActivity extends AppCompatActivity {
         System.exit(0);
     }
 
-    // ============= CICLO DE VIDA =============
     @Override
     protected void onResume() {
         super.onResume();
@@ -239,11 +279,15 @@ public class DetailsActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        pausarVideoActual();
+        detenerAutoPlay();
         if (isAudioPlaying) pausarAudioService();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        pausarVideoAnterior();
+        detenerAutoPlay();
     }
 }

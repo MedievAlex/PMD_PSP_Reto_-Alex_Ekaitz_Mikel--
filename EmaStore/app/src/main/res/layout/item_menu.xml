@@ -4,7 +4,8 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/gray">
 
     <ImageView
         android:id="@+id/imageViewIcon"
@@ -22,6 +23,7 @@
         android:maxLines="1"
         android:text="@string/title"
         android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:background="@color/gray"/>
 
 </LinearLayout>
