@@ -233,6 +233,7 @@ public class ClienteGUI {
         txtNuevaDescripcion = new JTextField(20);
         txtNuevaImagenPath = new JTextField(20);
         txtNuevaImagenPath.setEditable(false);
+        txtNuevaImagenPath.setFocusable(false);
         
         JButton btnSeleccionarImagen = new JButton("Seleccionar imagen");
         JButton btnCrear = new JButton("Crear APK");
@@ -255,7 +256,13 @@ public class ClienteGUI {
         panel.add(formPanel, BorderLayout.NORTH);
         panel.add(scrollResultado, BorderLayout.CENTER);
 
-        btnSeleccionarImagen.addActionListener(e -> seleccionarImagenNueva());
+        btnSeleccionarImagen.addActionListener(e -> {
+            String base64 = seleccionarImagen("Seleccionar imagen para crear");
+            if (base64 != null) {
+                imagenBase64Nueva = base64;
+                txtNuevaImagenPath.setText("Imagen PNG seleccionada");
+            }
+        });
         btnCrear.addActionListener(e -> crearAPK(panelResultado));
 
         return panel;
@@ -274,6 +281,7 @@ public class ClienteGUI {
         txtActualizarDescripcion = new JTextField(20);
         txtActualizarImagenPath = new JTextField(20);
         txtActualizarImagenPath.setEditable(false);
+        txtActualizarImagenPath.setFocusable(false);
         
         JButton btnCargar = new JButton("Cargar APK");
         JButton btnSeleccionarImagen = new JButton("Cambiar imagen");
@@ -302,7 +310,13 @@ public class ClienteGUI {
         panel.add(scrollResultado, BorderLayout.CENTER);
 
         btnCargar.addActionListener(e -> cargarAPKParaActualizar(txtBuscarAPK.getText().trim(), panelResultado));
-        btnSeleccionarImagen.addActionListener(e -> seleccionarImagenActualizar());
+        btnSeleccionarImagen.addActionListener(e -> {
+            String base64 = seleccionarImagen("Seleccionar imagen para actualizar");
+            if (base64 != null) {
+                imagenBase64Actualizar = base64;
+                txtActualizarImagenPath.setText("Imagen PNG seleccionada");
+            }
+        });
         btnActualizar.addActionListener(e -> actualizarAPK(panelResultado));
 
         return panel;
@@ -401,50 +415,37 @@ public class ClienteGUI {
         return panel;
     }
 
-    // ==================== MÉTODOS PARA IMÁGENES ====================
+    // ==================== MÉTODO PARA IMÁGENES ====================
     
-    private void seleccionarImagenNueva() {
+    private String seleccionarImagen(String title) {
         JFileChooser fileChooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Imágenes (PNG, JPG, JPEG)", "png", "jpg", "jpeg");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Imágenes PNG (*.png)", "png");
         fileChooser.setFileFilter(filter);
+        fileChooser.setDialogTitle(title);
         
         int result = fileChooser.showOpenDialog(frame);
         
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
+            
+            String extension = getFileExtension(selectedFile.getName()).toLowerCase();
+            
+            if (!extension.equals("png")) {
+                JOptionPane.showMessageDialog(frame, "Solo se permiten archivos PNG. Formato recibido: ." + extension, "Formato inválido", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+            
             try {
                 byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
-                String extension = getFileExtension(selectedFile.getName()).toLowerCase();
-                String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
-                imagenBase64Nueva = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
-                txtNuevaImagenPath.setText(selectedFile.getName());
+                return "data:image/png;base64," + Base64.getEncoder().encodeToString(fileContent);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
+                JOptionPane.showMessageDialog(frame, 
+                    "Error al cargar la imagen: " + ex.getMessage());
+                return null;
             }
         }
-    }
-    
-    private void seleccionarImagenActualizar() {
-        JFileChooser fileChooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Imágenes (PNG, JPG, JPEG)", "png", "jpg", "jpeg");
-        fileChooser.setFileFilter(filter);
         
-        int result = fileChooser.showOpenDialog(frame);
-        
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            try {
-                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
-                String extension = getFileExtension(selectedFile.getName()).toLowerCase();
-                String mimeType = extension.equals("png") ? "image/png" : "image/jpeg";
-                imagenBase64Actualizar = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileContent);
-                txtActualizarImagenPath.setText(selectedFile.getName());
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, "Error al cargar la imagen: " + ex.getMessage());
-            }
-        }
+        return null;
     }
     
     private String getFileExtension(String filename) {

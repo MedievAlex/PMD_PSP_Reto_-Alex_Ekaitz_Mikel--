@@ -108,6 +108,12 @@ public class Controlador {
 	        return ResponseEntity.badRequest().body("El título de la APK no puede estar vacío");
 	    }
 	    
+	    String image = apk.getImage();
+	    
+	    if (apk.getImage() != null && !apk.getImage().trim().isEmpty() && !image.startsWith("data:image/png;base64,")) {
+	    	return ResponseEntity.badRequest().body("Solo se permiten imágenes en formato PNG");
+	    }
+	    
 	    try {
 		    APK creada = servicio.addAPK(apk);
 		    
@@ -117,7 +123,7 @@ public class Controlador {
 		    
 		    return ResponseEntity.status(201).body(creada);
 	    } catch (ResponseStatusException e) {
-			return ResponseEntity.internalServerError().body("Error interno al crear la APK");
+	    	return ResponseEntity.internalServerError().body("Error interno al crear la APK");
 		}
 	}
 	
@@ -185,7 +191,7 @@ public class Controlador {
 	        if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
 	            return ResponseEntity.status(404).body("No se encontró el archivo APK: " + titulo);
 	        } else {
-	            return ResponseEntity.internalServerError().body("Error al intentar descargar la APK: " + e.getMessage());
+	            return ResponseEntity.internalServerError().body("Error interno al intentar descargar la APK: " + e.getMessage());
 	        }
 	    }
 	}
