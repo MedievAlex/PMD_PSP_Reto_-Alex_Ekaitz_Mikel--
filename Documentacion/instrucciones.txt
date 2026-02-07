@@ -1,6 +1,6 @@
 [INSTRUCCIONES DE EJECUCION]
 
-1) Importar los proyectos de la Api(EmaApi) y el Cliente(EmaClient).
+1) Importar los proyectos de la Api(EmaApi) y el Cliente(EmaClient). IMPORTANTE: Las APKs ya estan dentro de la API (EmaApi\files\apks).
 2) Click derecho a cada proyecto para ejecutarlos (Opcion Run As) como Maven Verify. Despues, se pueden ejecutar desde main como Java Aplication. IMPORTANTE: Ejecutar primero la Api.
 3) Una vez con el cliente en ejecucion, se pueden hacer las siguientes cciones:
 	- [Usuarios]: Ventana para comprobar el registro y login.
