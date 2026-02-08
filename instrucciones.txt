@@ -1,12 +1,13 @@
 [INSTRUCCIONES DE EJECUCION]
 
-1) Importar los proyectos de la Api(EmaApi) y el Cliente(EmaClient).
-2) Click derecho a cada proyecto para ejecutarlos (Opcion Run As) como Maven Verify. Despues, se pueden ejecutar desde main como Java Aplication. IMPORTANTE: Ejecutar primero la Api.
-3) Una vez con el cliente en ejecucion, se pueden hacer las siguientes cciones:
-	- [Usuarios]: Ventana para comprobar el registro y login.
-	- [Buscar APKs]: Ventana para listar todas las APKs o para buscar por Titulo una en especifico.
-	- [Crear APK]: Ventana para crear APKs con todos sus campos.
-	- [Actualizar APK]: Ventana para modificar una APK, especificada por Titulo. Los valores disponibles a modificar son el titulo, autor, descripcion y la imagen.
-	- [Eliminar APK]: Ventana para eliminar una APK concreta por Titulo.
-	- [Descargar APK]: Ventana para descargar una APK especifica por Titulo.
-	- [Calcular Hash]: Ventana para calcular el Hash tras poner el Titulo de la APK y otros datos como algoritmo y archivo local se podran calcular el Hash del Servidor, Hash del archivo local y despues se podran comparar ambos Hash.
+1) Importar los proyectos de la API (EmaApi) y el Cliente (EmaClient).
+2) Click derecho a cada proyecto para ejecutarlos (Opción Run As) como Maven Verify. Después, se pueden ejecutar desde main como Java Aplication. IMPORTANTE: Ejecutar primero la API.
+3) Durante la ejecución de la API, las modificaciones de las APKs se guardan correctamente en data/apks.json; sin embargo, al reiniciar la aplicación, este archivo se sobrescribe, ya que los datos se regeneran con valores por defecto a partir de los archivos .apk existentes en la carpeta files/apks.
+4) Una vez con el cliente en ejecución, se pueden hacer las siguientes acciones:
+	- [Usuarios]: Pestaña para comprobar el registro y login.
+	- [Buscar APKs]: Pestaña para listar todas las APKs o para obtener una mediante el Título.
+	- [Crear APK]: Pestaña para crear APKs con todos sus campos.
+	- [Actualizar APK]: Pestaña para modificar una APK, especificada por Título. Los valores disponibles a modificar son el título, autor, descripción y la imagen.
+	- [Eliminar APK]: Pestaña para eliminar una APK concreta por Título.
+	- [Descargar APK]: Pestaña para descargar una APK específica por Título.
+	- [Calcular Hash]: Pestaña para calcular el Hash de un fichero. Tras poner el Título de la APK y otros datos como algoritmo y archivo local, se podrá calcular el Hash del Servidor, el Hash del archivo local y por último, se podrán comparar ambos para comprobar su 	        integridad.
